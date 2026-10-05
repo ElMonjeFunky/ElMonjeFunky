@@ -34,17 +34,11 @@ def resumen(items):
     }
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("volcado", type=Path)
-    ap.add_argument("--semanas", nargs="*", help="solo estas semanas (ej. S27)")
-    ap.add_argument("--salida", type=Path, default=Path("tarjetas_completas_2026.html"))
-    ap.add_argument("--variedades", type=Path, default=AQUI / "variedades.csv")
-    args = ap.parse_args()
-
+def construir_semanas(volcado, ruta_variedades=AQUI / "variedades.csv"):
+    """Las 53 semanas con sus tipos, variedades y fincas (y sus cifras)."""
     tabla = json.loads((AQUI / "semanas_2026_ia.json").read_text(encoding="utf-8"))
-    nombres = cargar_variedades(args.variedades)
-    bloques = leer_bloques(args.volcado)
+    nombres = cargar_variedades(ruta_variedades)
+    bloques = leer_bloques(volcado)
 
     # semana -> tipo -> variedad -> [(bloque, medidas de esa semana)]
     arbol = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -77,7 +71,18 @@ def main():
         tarjeta["firmeza_anterior"] = prev
         semanas.append(tarjeta)
         anterior = tarjeta
+    return semanas, bloques
 
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("volcado", type=Path)
+    ap.add_argument("--semanas", nargs="*", help="solo estas semanas (ej. S27)")
+    ap.add_argument("--salida", type=Path, default=Path("tarjetas_completas_2026.html"))
+    ap.add_argument("--variedades", type=Path, default=AQUI / "variedades.csv")
+    args = ap.parse_args()
+
+    semanas, _ = construir_semanas(args.volcado, args.variedades)
     if args.semanas:
         semanas = [s for s in semanas if s["etiqueta"] in args.semanas]
     datos = {"origen": args.volcado.name, "semanas": semanas, "azucar_temporada": True}

@@ -43,3 +43,9 @@ python3 escandallo.py VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv
 `tarjetas_semanales.py` genera `tarjetas_septiembre.html` (a partir de `plantilla_tarjetas.html`): una tarjeta por semana con cada variedad escandallada, su firmeza de esa semana y el azúcar de temporada. Periodo configurable con `--desde` / `--hasta`.
 
 `escandallo.py` también genera `Datos de azucar y firmeza por melon en general.xlsx` (solo el desglose tipo → variedad → finca).
+
+## Informe A4
+
+`informe_a4.py` genera `Escandallo semanal melon 2026.html` y `.pdf` (A4): portada con resumen y las 53 semanas, y una sección por semana con tipo → variedad → finca (fincas, albaranes, medidas de firmeza, firmeza media/mín/máx, Brix medio/mín/máx y % <9, 9–10, 10–12, ≥12).
+
+`variedades.csv` tiene el nombre de cada código (columna `origen`: exacto, por número o tomado del código).
