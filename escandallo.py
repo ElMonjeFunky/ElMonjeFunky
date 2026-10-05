@@ -109,6 +109,27 @@ def cargar_variedades(ruta):
         return {r["codigo"].strip(): r["nombre"].strip() for r in csv.DictReader(fh) if r.get("nombre")}
 
 
+def estadisticas(bloques):
+    """Azúcar y firmeza juntando varios bloques. El azúcar de cada bloque pesa
+    según su nº de muestras estimado; la firmeza junta todas las medidas."""
+    conteo = defaultdict(float)
+    mayor12 = n_total = 0
+    for b in bloques:
+        pcts = [p for _, p in b["azucar"]]
+        if not pcts:
+            continue
+        n = muestras_estimadas(pcts) or 100
+        n_total += n
+        mayor12 += b["rangos"].get("MAYORES DE 12", 0) / 100 * n
+        for v, p in b["azucar"]:
+            conteo[v] += p / 100 * n
+    fv = [v for b in bloques for _, _, v in b["firmeza"]]
+    az = ([round(sum(v * c for v, c in conteo.items()) / sum(conteo.values()), 2),
+           min(conteo), max(conteo), n_total, round(mayor12 / n_total, 4)] if n_total else [None] * 5)
+    fz = [len(fv), round(mean(fv), 2), min(fv), max(fv)] if fv else [0, None, None, None]
+    return az + fz
+
+
 # --- Excel -----------------------------------------------------------------
 FUENTE = "Arial"
 CAB = PatternFill("solid", fgColor="1F4E78")
@@ -186,6 +207,55 @@ def main():
 
     codigos = sorted({b["variedad"] for b in bloques})
     wb = Workbook()
+
+    # Agrupación tipo -> variedad -> finca (las categorías C2/G se suman a su variedad)
+    arbol = defaultdict(lambda: defaultdict(list))
+    for b in bloques:
+        arbol[tipo_y_categoria(b["producto"])[0]][b["variedad"]].append(b)
+    cab_stats = ["Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)",
+                 "% > 12 °Brix", "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx"]
+    filas_arbol, niveles, plano = [], [], []
+    for tipo in sorted(arbol):
+        variedades = arbol[tipo]
+        todos = [b for bs in variedades.values() for b in bs]
+        fincas = len({b["cod_finca"] for b in todos})
+        filas_arbol.append([tipo, f"TOTAL {tipo}", "", f"{len(variedades)} variedades", fincas] + estadisticas(todos))
+        niveles.append(0)
+        for var in sorted(variedades):
+            bs = variedades[var]
+            st = estadisticas(bs)
+            nf = len({b["cod_finca"] for b in bs})
+            filas_arbol.append([tipo, var, nombres.get(var, ""), "", nf] + st)
+            niveles.append(1)
+            plano.append([tipo, var, nombres.get(var, ""), nf] + st)
+            for b in sorted(bs, key=lambda b: b["finca"]):
+                cat = tipo_y_categoria(b["producto"])[1]
+                finca = f"{b['finca']} ({b['cod_finca']})" + (f" [{cat}]" if cat else "")
+                filas_arbol.append([tipo, var, nombres.get(var, ""), finca, 1] + estadisticas([b]))
+                niveles.append(2)
+
+    fmt_stats = {"F": "0.00", "J": "0%", "L": "0.00"}
+    pv = hoja(wb, "Por variedad", ["Tipo melón", "Variedad (código)", "Nombre variedad", "Finca",
+                                   "Nº fincas"] + cab_stats, filas_arbol, fmt_stats,
+              [17, 22, 18, 46, 8, 11, 9, 9, 11, 9, 10, 10, 9, 9], primera=True)
+    TIPO_FILL, VAR_FILL = PatternFill("solid", fgColor="BDD7EE"), PatternFill("solid", fgColor="E2EFDA")
+    pv.sheet_properties.outlinePr.summaryBelow = False
+    for i, nivel in enumerate(niveles, start=2):
+        if nivel == 0:
+            for c in pv[i]:
+                c.fill, c.font = TIPO_FILL, Font(name=FUENTE, bold=True)
+        elif nivel == 1:
+            for c in pv[i]:
+                c.fill, c.font = VAR_FILL, Font(name=FUENTE, bold=True)
+            pv.row_dimensions[i].outlineLevel = 1
+        else:
+            for c in pv[i]:
+                c.fill = PatternFill(fill_type=None)
+            pv[f"D{i}"].alignment = Alignment(indent=2)
+            pv.row_dimensions[i].outlineLevel = 2
+    hoja(wb, "Resumen variedades", ["Tipo melón", "Variedad (código)", "Nombre variedad", "Nº fincas"]
+         + cab_stats, plano, {"E": "0.00", "I": "0%", "K": "0.00"},
+         [17, 18, 18, 8, 11, 9, 9, 11, 9, 10, 10, 9, 9])
     comunes = ["Tipo melón", "Cat.", "Variedad (código)", "Nombre variedad", "Cód. finca", "Finca"]
     anchos_comunes = [17, 6, 16, 18, 13, 34]
 
@@ -194,7 +264,7 @@ def main():
         "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx",
         "Primera fecha", "Última fecha", "Semanas con firmeza"], resumen,
         {"G": "0.00", "K": "0%", "M": "0.00", "P": "dd/mm/yyyy", "Q": "dd/mm/yyyy"},
-        anchos_comunes + [11, 9, 9, 11, 9, 10, 10, 9, 9, 12, 12, 40], primera=True)
+        anchos_comunes + [11, 9, 9, 11, 9, 10, 10, 9, 9, 12, 12, 40])
     semanal_ws = hoja(wb, "Firmeza semanal", comunes + ["Semana", "Nº medidas", "Firmeza media",
                                                         "Firmeza mín", "Firmeza máx"], semanal,
                       {"I": "0.00"}, anchos_comunes + [9, 10, 10, 10, 10])
@@ -213,6 +283,8 @@ def main():
     for linea in [
         "Cómo se ha interpretado el volcado",
         f"Origen: {args.volcado.name} — {len(bloques)} bloques (uno por producto + variedad + finca).",
+        "'Por variedad': tipo de melón -> cada variedad (fila verde, todas sus fincas juntas) -> el detalle de cada finca. Los botones 1/2/3 de la izquierda pliegan/despliegan.",
+        "  Al juntar fincas, el azúcar de cada finca pesa según su nº de muestras y la firmeza junta todas las medidas. C2 y G se suman a su variedad (se indican entre corchetes en la finca).",
         "Tipo melón = PRODUCTO sin 'MELON'. Cat. = sufijo del producto (C2 = categoría 2; G = sin confirmar).",
         "Variedad = código del volcado. El nombre sale de la hoja 'Variedades': se rellena desde variedades.csv (codigo,nombre); al completarlo y volver a ejecutar escandallo.py aparece en todas las hojas.",
         "AZÚCAR: el volcado solo da el % de muestras por cada valor de °Brix (sección 'VALORES DE AZUCAR V') para toda la temporada del bloque, SIN FECHA.",
