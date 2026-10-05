@@ -22,3 +22,18 @@ python3 informe_semanal.py datos_brutos.xlsx
 ```
 
 Detecta solas las columnas de fecha, variedad, azúcar/brix y firmeza; si se llaman distinto, indícalas con `--fecha`, `--variedad`, `--azucar`, `--firmeza`.
+
+## Volcado de escandallo (ERP)
+
+`escandallo.py` interpreta el CSV `VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv` (un bloque por producto + variedad + finca) y genera `informe_escandallo_melon_2026.xlsx`:
+
+- **Variedad x Finca**: azúcar (media/mín/máx a partir de la distribución por °Brix) y firmeza (media/mín/máx) de cada variedad en cada finca.
+- **Firmeza semanal**: firmeza por variedad, finca y semana (el azúcar viene sin fecha en el volcado).
+- **Datos firmeza / Datos azúcar**: datos extraídos, una fila por medida.
+- **Revisar**: medidas fuera de escala.
+
+Los nombres de variedad se rellenan en `variedades.csv` (`codigo,nombre`); después se vuelve a ejecutar:
+
+```
+python3 escandallo.py VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv
+```
