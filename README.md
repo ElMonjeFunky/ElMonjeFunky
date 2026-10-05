@@ -46,6 +46,6 @@ python3 escandallo.py VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv
 
 ## Informe A4
 
-`informe_a4.py` genera `Escandallo semanal melon 2026.html` y `.pdf` (A4): portada con resumen y las 53 semanas, y una sección por semana con tipo → variedad → finca (fincas, albaranes, medidas de firmeza, firmeza media/mín/máx, Brix medio/mín/máx y % <9, 9–10, 10–12, ≥12).
+`informe_a4.py` genera `Escandallo semanal melon 2026.html` y `.pdf`: 21 páginas A4 (portada con las 53 semanas + una página por semana con datos). Cada semana cabe entera en su página: filas de tipo (totales) y de variedad con fincas, albaranes, medidas de firmeza, firmeza media/mín/máx, Brix medio/mín/máx y % <9, 9–10, 10–12, ≥12. El detalle por finca está en el Excel. Con `--lienzo CARPETA` escribe las mismas páginas para el lienzo de Design.
 
 `variedades.csv` tiene el nombre de cada código (columna `origen`: exacto, por número o tomado del código).
