@@ -1,0 +1,157 @@
+<title>Escandallos semanales melón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera con chips de semana -> una tarjeta ancha por semana, tablas agrupadas por tipo de melón */
+:root {
+  --bg: #f4f5ef; --surface: #ffffff; --ink: #1d231c; --muted: #646d60; --line: #dde2d5;
+  --rind: #2f5a36; --rind-soft: #e6eedf; --flesh: #d9782d; --flesh-soft: #fbe9d9;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131712; --surface: #1b2019; --ink: #e7ebe2; --muted: #9ba495; --line: #2d3429;
+  --rind: #93c48a; --rind-soft: #24301f; --flesh: #f0a15e; --flesh-soft: #3a2a1c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #131712; --surface: #1b2019; --ink: #e7ebe2; --muted: #9ba495; --line: #2d3429;
+  --rind: #93c48a; --rind-soft: #24301f; --flesh: #f0a15e; --flesh-soft: #3a2a1c; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 22px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 800 clamp(28px, 4.4vw, 44px)/1.05 var(--display); margin: 0; text-wrap: balance; color: var(--rind); }
+.intro { margin: 0; color: var(--muted); max-width: 68ch; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--surface); color: var(--ink); text-decoration: none; font-weight: 600; }
+nav a:hover, nav a:focus-visible { border-color: var(--rind); outline: none; }
+nav a small { font: 400 12px var(--mono); color: var(--muted); }
+nav a.vacia { opacity: .6; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; scroll-margin-top: 12px; }
+.card-head { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--line); background: var(--rind-soft); }
+.week { display: flex; gap: 14px; align-items: baseline; }
+.week b { font: 800 40px/1 var(--display); color: var(--rind); }
+.week span { color: var(--muted); }
+.week .rango { color: var(--ink); font-weight: 600; display: block; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.stat { display: grid; }
+.stat dt { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat dd { margin: 0; font: 600 20px var(--display); font-variant-numeric: tabular-nums; }
+.card-body { padding: 6px 20px 18px; display: grid; gap: 4px; }
+.empty { padding: 18px 20px 22px; color: var(--muted); }
+
+.tipo { font: 600 13px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--flesh);
+  margin: 16px 0 4px; display: flex; gap: 10px; align-items: center; }
+.tipo::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font: 500 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.var b { font-weight: 600; }
+.var small { display: block; color: var(--muted); }
+details summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+details summary:focus-visible { outline: 2px solid var(--rind); outline-offset: 2px; }
+details ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+
+/* Barra de firmeza sobre la escala 1-5 del escandallo */
+.firm { display: grid; grid-template-columns: 112px auto; gap: 10px; align-items: center; }
+.scale { position: relative; height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
+.scale .r { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--rind); opacity: .35; }
+.scale .m { position: absolute; top: -3px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--rind); }
+.firm .v { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.firm .v small, .az small { color: var(--muted); }
+.az { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.tag { display: inline-block; font: 500 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px; background: var(--flesh-soft); color: var(--flesh); margin-left: 4px; }
+
+.nota { font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--flesh); padding: 2px 0 2px 12px; max-width: 80ch; }
+@media (max-width: 560px) { .week b { font-size: 32px; } .card-head, .card-body { padding-inline: 14px; } }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>Escandallos de melón por semana</h1>
+    <p class="intro" id="intro"></p>
+    <nav id="nav" aria-label="Semanas"></nav>
+  </header>
+  <main id="cards" style="display:grid;gap:22px"></main>
+  <p class="nota">Firmeza: medidas del escandallo hechas esa semana, en escala 1–5 (barra: rango mín–máx, marca: media).
+    Azúcar: media y rango en °Brix de toda la temporada de esas fincas y variedad, porque el volcado no trae fecha para el azúcar.
+    Para tener el azúcar por semana hace falta sacar el volcado filtrado por fechas, una vez por semana.</p>
+</div>
+
+<script>
+const DATOS = /*__DATOS__*/null;
+const fmt = (n, d = 1) => n == null ? "—" : n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fFecha = iso => new Date(iso + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pos = v => ((Math.min(Math.max(v, 1), 5) - 1) / 4 * 100).toFixed(1) + "%";
+
+document.getElementById("eyebrow").textContent =
+  `${fFecha(DATOS.desde)} – ${fFecha(DATOS.hasta)} 2026 · ${DATOS.origen}`;
+document.getElementById("intro").textContent =
+  `Una tarjeta por semana (lunes a domingo) con cada variedad que tuvo escandallo, agrupada por tipo de melón. ` +
+  `El volcado llega hasta el ${fFecha(DATOS.ultima_fecha_volcado)}.`;
+
+const nav = document.getElementById("nav"), cards = document.getElementById("cards");
+for (const s of DATOS.semanas) {
+  const filas = s.filas, vacia = !filas.length;
+  const fincas = new Set(filas.flatMap(f => f.fincas));
+  const medidas = filas.reduce((a, f) => a + f.medidas, 0);
+  const media = medidas ? filas.reduce((a, f) => a + f.firmeza[0] * f.medidas, 0) / medidas : null;
+  const parcial = s.periodo_desde !== isoDe(s.desde) || s.periodo_hasta !== isoDe(s.hasta);
+
+  nav.insertAdjacentHTML("beforeend",
+    `<a href="#${s.etiqueta}" class="${vacia ? "vacia" : ""}">${s.etiqueta}<small>${vacia ? "sin datos" : filas.length + " var."}</small></a>`);
+
+  const tipos = [...new Set(filas.map(f => f.tipo))];
+  const cuerpo = vacia
+    ? `<div class="empty">Sin escandallos registrados esta semana${new Date(s.periodo_desde) > new Date(DATOS.ultima_fecha_volcado)
+        ? ` (el volcado termina el ${fFecha(DATOS.ultima_fecha_volcado)})` : ""}.</div>`
+    : `<div class="card-body">${tipos.map(t => tablaTipo(t, filas.filter(f => f.tipo === t))).join("")}</div>`;
+
+  cards.insertAdjacentHTML("beforeend", `
+    <section class="card" id="${s.etiqueta}" aria-label="Semana ${s.etiqueta}">
+      <div class="card-head">
+        <div class="week"><b>${s.etiqueta}</b>
+          <span><span class="rango">${fFecha(s.periodo_desde)} – ${fFecha(s.periodo_hasta)}</span>
+          ${parcial ? `semana completa ${s.desde.slice(0, 5)} – ${s.hasta.slice(0, 5)}` : "lunes a domingo"}</span></div>
+        <dl class="stats">
+          ${stat("Tipos", tipos.length)}${stat("Variedades", filas.length)}${stat("Fincas", fincas.size)}
+          ${stat("Medidas firmeza", medidas)}${stat("Firmeza media", fmt(media, 2))}
+        </dl>
+      </div>${cuerpo}
+    </section>`);
+}
+
+function isoDe(dmy) { const [d, m, y] = dmy.split("/"); return `${y}-${m}-${d}`; }
+function stat(k, v) { return `<div class="stat"><dt>${k}</dt><dd>${v}</dd></div>`; }
+function tablaTipo(tipo, filas) {
+  return `<div class="tipo">${esc(tipo)}</div><div class="scroll"><table>
+    <thead><tr><th>Variedad</th><th>Fincas</th><th class="num">Albaranes</th><th class="num">Medidas</th>
+      <th>Firmeza semana (1–5)</th><th>Azúcar °Brix</th><th class="num">&gt;12 °Brix</th></tr></thead>
+    <tbody>${filas.map(f => `<tr>
+      <td class="var"><b>${esc(f.variedad)}</b><small>${f.nombre ? esc(f.nombre) : "nombre pendiente"}</small></td>
+      <td><details><summary>${f.fincas.length} finca${f.fincas.length > 1 ? "s" : ""}</summary>
+        <ul>${f.fincas.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details></td>
+      <td class="num">${f.albaranes}</td><td class="num">${f.medidas}</td>
+      <td><div class="firm"><div class="scale" role="img" aria-label="Firmeza de ${f.firmeza[1]} a ${f.firmeza[2]}, media ${f.firmeza[0]}">
+          <div class="r" style="left:${pos(f.firmeza[1])};right:calc(100% - ${pos(f.firmeza[2])})"></div>
+          <div class="m" style="left:${pos(f.firmeza[0])}"></div></div>
+        <span class="v">${fmt(f.firmeza[0], 2)} <small>${fmt(f.firmeza[1])}–${fmt(f.firmeza[2])}</small></span></div></td>
+      <td class="az">${f.azucar_temporada[0] == null ? "—" :
+        `${fmt(f.azucar_temporada[0])} <small>${fmt(f.azucar_temporada[1])}–${fmt(f.azucar_temporada[2])}</small><span class="tag">temp.</span>`}</td>
+      <td class="num">${f.mayor12_temporada == null ? "—" : Math.round(f.mayor12_temporada * 100) + " %"}</td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+</script>

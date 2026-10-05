@@ -169,6 +169,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("volcado", type=Path)
     ap.add_argument("--salida", type=Path, default=Path("informe_escandallo_melon_2026.xlsx"))
+    ap.add_argument("--general", type=Path, default=Path("Datos de azucar y firmeza por melon en general.xlsx"))
     ap.add_argument("--variedades", type=Path, default=AQUI / "variedades.csv")
     args = ap.parse_args()
 
@@ -305,6 +306,12 @@ def main():
     notas.column_dimensions["A"].width = 140
 
     wb.save(args.salida)
+    # Versión resumida: solo el desglose por variedad
+    for nombre in wb.sheetnames:
+        if nombre not in ("Por variedad", "Resumen variedades", "Variedades", "Notas"):
+            del wb[nombre]
+    wb["Por variedad"].sheet_view.zoomScale = 90
+    wb.save(args.general)
     print(f"{len(bloques)} bloques, {len(datos_firmeza)} medidas de firmeza, {len(codigos)} variedades -> {args.salida}")
 
 

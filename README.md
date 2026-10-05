@@ -37,3 +37,9 @@ Los nombres de variedad se rellenan en `variedades.csv` (`codigo,nombre`); despu
 ```
 python3 escandallo.py VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv
 ```
+
+## Tarjetas semanales
+
+`tarjetas_semanales.py` genera `tarjetas_septiembre.html` (a partir de `plantilla_tarjetas.html`): una tarjeta por semana con cada variedad escandallada, su firmeza de esa semana y el azúcar de temporada. Periodo configurable con `--desde` / `--hasta`.
+
+`escandallo.py` también genera `Datos de azucar y firmeza por melon en general.xlsx` (solo el desglose tipo → variedad → finca).

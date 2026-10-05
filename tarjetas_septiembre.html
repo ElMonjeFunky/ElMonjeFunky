@@ -1,0 +1,157 @@
+<title>Escandallos semanales melón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera con chips de semana -> una tarjeta ancha por semana, tablas agrupadas por tipo de melón */
+:root {
+  --bg: #f4f5ef; --surface: #ffffff; --ink: #1d231c; --muted: #646d60; --line: #dde2d5;
+  --rind: #2f5a36; --rind-soft: #e6eedf; --flesh: #d9782d; --flesh-soft: #fbe9d9;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131712; --surface: #1b2019; --ink: #e7ebe2; --muted: #9ba495; --line: #2d3429;
+  --rind: #93c48a; --rind-soft: #24301f; --flesh: #f0a15e; --flesh-soft: #3a2a1c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #131712; --surface: #1b2019; --ink: #e7ebe2; --muted: #9ba495; --line: #2d3429;
+  --rind: #93c48a; --rind-soft: #24301f; --flesh: #f0a15e; --flesh-soft: #3a2a1c; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 56px; display: grid; gap: 22px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 800 clamp(28px, 4.4vw, 44px)/1.05 var(--display); margin: 0; text-wrap: balance; color: var(--rind); }
+.intro { margin: 0; color: var(--muted); max-width: 68ch; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a { display: inline-flex; gap: 8px; align-items: baseline; padding: 6px 12px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--surface); color: var(--ink); text-decoration: none; font-weight: 600; }
+nav a:hover, nav a:focus-visible { border-color: var(--rind); outline: none; }
+nav a small { font: 400 12px var(--mono); color: var(--muted); }
+nav a.vacia { opacity: .6; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; scroll-margin-top: 12px; }
+.card-head { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--line); background: var(--rind-soft); }
+.week { display: flex; gap: 14px; align-items: baseline; }
+.week b { font: 800 40px/1 var(--display); color: var(--rind); }
+.week span { color: var(--muted); }
+.week .rango { color: var(--ink); font-weight: 600; display: block; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.stat { display: grid; }
+.stat dt { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat dd { margin: 0; font: 600 20px var(--display); font-variant-numeric: tabular-nums; }
+.card-body { padding: 6px 20px 18px; display: grid; gap: 4px; }
+.empty { padding: 18px 20px 22px; color: var(--muted); }
+
+.tipo { font: 600 13px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--flesh);
+  margin: 16px 0 4px; display: flex; gap: 10px; align-items: center; }
+.tipo::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 760px; font-variant-numeric: tabular-nums; }
+th { text-align: left; font: 500 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+  padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.var b { font-weight: 600; }
+.var small { display: block; color: var(--muted); }
+details summary { cursor: pointer; color: var(--muted); font-size: 13.5px; }
+details summary:focus-visible { outline: 2px solid var(--rind); outline-offset: 2px; }
+details ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+
+/* Barra de firmeza sobre la escala 1-5 del escandallo */
+.firm { display: grid; grid-template-columns: 112px auto; gap: 10px; align-items: center; }
+.scale { position: relative; height: 10px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
+.scale .r { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--rind); opacity: .35; }
+.scale .m { position: absolute; top: -3px; width: 4px; height: 14px; margin-left: -2px; border-radius: 2px; background: var(--rind); }
+.firm .v { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.firm .v small, .az small { color: var(--muted); }
+.az { font-family: var(--mono); font-size: 13.5px; white-space: nowrap; }
+.tag { display: inline-block; font: 500 10.5px var(--mono); letter-spacing: .04em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px; background: var(--flesh-soft); color: var(--flesh); margin-left: 4px; }
+
+.nota { font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--flesh); padding: 2px 0 2px 12px; max-width: 80ch; }
+@media (max-width: 560px) { .week b { font-size: 32px; } .card-head, .card-body { padding-inline: 14px; } }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>Escandallos de melón por semana</h1>
+    <p class="intro" id="intro"></p>
+    <nav id="nav" aria-label="Semanas"></nav>
+  </header>
+  <main id="cards" style="display:grid;gap:22px"></main>
+  <p class="nota">Firmeza: medidas del escandallo hechas esa semana, en escala 1–5 (barra: rango mín–máx, marca: media).
+    Azúcar: media y rango en °Brix de toda la temporada de esas fincas y variedad, porque el volcado no trae fecha para el azúcar.
+    Para tener el azúcar por semana hace falta sacar el volcado filtrado por fechas, una vez por semana.</p>
+</div>
+
+<script>
+const DATOS = {"desde": "2026-09-01", "hasta": "2026-09-30", "ultima_fecha_volcado": "2026-09-17", "origen": "b402ffd3-VOLCADO_GLOBAL_ESCANDALLO_2026_MELON_.csv", "semanas": [{"etiqueta": "S36", "desde": "31/08/2026", "hasta": "06/09/2026", "periodo_desde": "2026-09-01", "periodo_hasta": "2026-09-06", "filas": [{"tipo": "AMARILLO", "variedad": "A-26-11", "nombre": "", "fincas": ["GUTIERREZ JIMENEZ MANUEL CAMPO (260.003.535)", "MERINO VIOLERO LUIS CAMPO DE C (260.003.545)", "SEÑORIO DE AGROGIGANTES SL CAM (260.003.557)", "VELA BASTANTE RUBEN CAMPO DE C (260.003.518)"], "albaranes": 10, "medidas": 50, "firmeza": [3.31, 1.8, 4.5], "azucar_temporada": [12.1, 5.0, 18.0], "mayor12_temporada": 0.2343, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04"]}, {"tipo": "AMARILLO", "variedad": "A-26-18", "nombre": "", "fincas": ["CAÑAS PINTOR FRANCISCO CAMPO D (260.003.513)", "GUTIERREZ JIMENEZ MANUEL CAMPO (260.003.551)", "MERINO VIOLERO LUIS CAMPO DE C (260.003.546)", "SEÑORIO DE AGROGIGANTES SL CAM (260.003.556)"], "albaranes": 7, "medidas": 35, "firmeza": [3.82, 2.4, 4.8], "azucar_temporada": [12.44, 5.0, 18.0], "mayor12_temporada": 0.1512, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03"]}, {"tipo": "AMARILLO", "variedad": "A-26-21", "nombre": "", "fincas": ["MERINO VIOLERO LUIS CAMPO DE C (260.003.423)"], "albaranes": 1, "medidas": 5, "firmeza": [3.64, 3.0, 4.5], "azucar_temporada": [13.74, 10.0, 17.0], "mayor12_temporada": 0.57, "fechas": ["2026-09-04"]}, {"tipo": "CANTALOUPE", "variedad": "C-26-24", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.529)", "ALBERCA ORTIZ VICENTE CAMPO DE (260.003.309)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.534)", "SAT 9861 AGROPEC EL ROSARIO AL (260.003.520)", "UBEDAS (2.026.316.103)"], "albaranes": 12, "medidas": 60, "firmeza": [3.35, 1.6, 4.6], "azucar_temporada": [13.59, 6.0, 18.0], "mayor12_temporada": 0.0996, "fechas": ["2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"]}, {"tipo": "GALIA", "variedad": "G-26-03", "nombre": "", "fincas": ["ALBORAJ (2.026.334.372)", "CAMPOS DE CASTILLA SL CAMPO DE (260.003.553)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.541)", "VELA LOPEZ DE LA RICA Mª PAZ A (260.003.550)"], "albaranes": 6, "medidas": 30, "firmeza": [3.39, 2.4, 4.9], "azucar_temporada": [14.02, 9.0, 18.0], "mayor12_temporada": 0.2613, "fechas": ["2026-09-01", "2026-09-02", "2026-09-04", "2026-09-05"]}, {"tipo": "GALIA", "variedad": "G-26-04", "nombre": "", "fincas": ["AGROMAJANAR CONSULTING SL CAMP (260.003.503)", "ALBORAJ (2.026.334.470)", "ESCRIBANO MINGUEZ EUGENIO AREN (260.003.521)", "LARA ANGULO JUSTO ARENALES DE (260.003.517)", "LOPEZ ESCRIBANO MIGUEL ANGEL A (260.003.508)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.540)"], "albaranes": 12, "medidas": 60, "firmeza": [3.09, 1.4, 4.7], "azucar_temporada": [13.67, 8.0, 19.0], "mayor12_temporada": 0.2912, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"]}, {"tipo": "GALIA", "variedad": "G-26-06", "nombre": "", "fincas": ["ALBORAJ (2.026.334.460)", "LA HUERTA DE SAN ISIDRO SA RIN (260.003.045)", "LOPEZ DE LA RICA VELA MARIO AL (260.003.307)", "LOPEZ ESCRIBANO MIGUEL ANGEL A (260.003.509)", "VELA BASTANTE RUBEN CAMPO DE C (260.003.502)", "VELA LOPEZ DE LA RICA Mª PAZ A (260.003.550)"], "albaranes": 8, "medidas": 44, "firmeza": [2.46, 1.3, 4.2], "azucar_temporada": [14.42, 8.0, 18.0], "mayor12_temporada": 0.3832, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-27", "nombre": "", "fincas": ["LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.530)"], "albaranes": 1, "medidas": 5, "firmeza": [2.42, 1.6, 4.2], "azucar_temporada": [14.32, 9.0, 18.0], "mayor12_temporada": 0.4, "fechas": ["2026-09-04"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-28", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL CAMPO DE (260.003.554)", "LOPEZ ESCRIBANO MIGUEL ANGEL A (260.003.552)"], "albaranes": 2, "medidas": 10, "firmeza": [3.0, 2.3, 3.7], "azucar_temporada": [14.04, 8.0, 18.0], "mayor12_temporada": 0.4083, "fechas": ["2026-09-01", "2026-09-03"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-30", "nombre": "", "fincas": ["LOPEZ DE LA RICA VELA MARIO AL (260.003.544)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.531)"], "albaranes": 2, "medidas": 10, "firmeza": [2.69, 1.6, 4.2], "azucar_temporada": [14.67, 11.0, 18.0], "mayor12_temporada": 0.58, "fechas": ["2026-09-01", "2026-09-02"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-32", "nombre": "", "fincas": ["CAÑAS ESCRIBANO DANIEL CAMPO D (260.003.549)", "PRADILLO MANZANERO PATRICIO CA (260.003.547)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.516)"], "albaranes": 10, "medidas": 55, "firmeza": [2.98, 1.3, 4.8], "azucar_temporada": [13.02, 5.0, 18.0], "mayor12_temporada": 0.2126, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-05"]}, {"tipo": "IVORY GAYA", "variedad": "IG-26-03", "nombre": "", "fincas": ["SAT 9861 AGROPEC EL ROSARIO AL (260.003.515)"], "albaranes": 1, "medidas": 5, "firmeza": [3.06, 2.7, 3.4], "azucar_temporada": [13.82, 12.0, 17.0], "mayor12_temporada": 0.3333, "fechas": ["2026-09-05"]}, {"tipo": "PIEL DE SAPO", "variedad": "Z-26-06", "nombre": "", "fincas": ["UBEDAS (2.026.316.041)"], "albaranes": 1, "medidas": 5, "firmeza": [3.46, 2.7, 4.6], "azucar_temporada": [12.92, 5.5, 18.0], "mayor12_temporada": 0.4, "fechas": ["2026-09-01"]}, {"tipo": "PIEL DE SAPO", "variedad": "Z-4481", "nombre": "", "fincas": ["UBEDAS (2.026.316.021)"], "albaranes": 6, "medidas": 30, "firmeza": [3.04, 2.0, 4.2], "azucar_temporada": [12.21, 8.0, 16.0], "mayor12_temporada": 0.2235, "fechas": ["2026-09-01", "2026-09-02", "2026-09-03"]}, {"tipo": "SUNUP", "variedad": "GC-26-02", "nombre": "", "fincas": ["SAT 9861 AGROPEC EL ROSARIO AL (260.003.514)"], "albaranes": 2, "medidas": 10, "firmeza": [4.11, 3.5, 4.6], "azucar_temporada": [15.4, 10.0, 19.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-03", "2026-09-05"]}, {"tipo": "SUNUP", "variedad": "GC-26-04", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL ARENALES (260.003.537)", "LA HUERTA DE SAN ISIDRO SA RIN (260.003.480)", "UBEDAS (2.026.316.102)"], "albaranes": 10, "medidas": 50, "firmeza": [3.32, 2.0, 4.6], "azucar_temporada": [13.83, 7.0, 18.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-02", "2026-09-03", "2026-09-04"]}]}, {"etiqueta": "S37", "desde": "07/09/2026", "hasta": "13/09/2026", "periodo_desde": "2026-09-07", "periodo_hasta": "2026-09-13", "filas": [{"tipo": "AMARILLO", "variedad": "A-26-02", "nombre": "", "fincas": ["LUCAS TORRES INIESTA J ANTONIO (260.003.496)", "SAT 9861 AGROPEC EL ROSARIO AL (260.003.494)"], "albaranes": 3, "medidas": 15, "firmeza": [2.99, 2.0, 4.2], "azucar_temporada": [12.38, 7.0, 17.0], "mayor12_temporada": 0.4068, "fechas": ["2026-09-07", "2026-09-08", "2026-09-11"]}, {"tipo": "AMARILLO", "variedad": "A-26-11", "nombre": "", "fincas": ["ANGULO MANZANEQUE IGNACIO AREN (260.003.304)", "CAÑAS MERINO VICTOR FRANCISCO (260.003.305)", "EXPLOTACIONES CHINCHILLA SL TO (260.003.495)", "MERINO VIOLERO LUIS CAMPO DE C (260.003.545)", "SEÑORIO DE AGROGIGANTES SL CAM (260.003.557)", "VELA BASTANTE RUBEN CAMPO DE C (260.003.518)"], "albaranes": 6, "medidas": 30, "firmeza": [3.18, 1.5, 4.3], "azucar_temporada": [12.25, 5.0, 18.0], "mayor12_temporada": 0.3041, "fechas": ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10"]}, {"tipo": "AMARILLO", "variedad": "A-26-18", "nombre": "", "fincas": ["LUCAS TORRES INIESTA J ANTONIO (260.003.512)", "MERINO VIOLERO LUIS CAMPO DE C (260.003.546)", "SEÑORIO DE AGROGIGANTES SL CAM (260.003.556)"], "albaranes": 3, "medidas": 15, "firmeza": [3.87, 2.5, 4.8], "azucar_temporada": [10.69, 5.0, 16.0], "mayor12_temporada": 0.0623, "fechas": ["2026-09-09", "2026-09-10", "2026-09-11"]}, {"tipo": "AMARILLO", "variedad": "A-26-21", "nombre": "", "fincas": ["EXPLOTACIONES CHINCHILLA SL TO (260.003.495)"], "albaranes": 1, "medidas": 5, "firmeza": [3.24, 2.4, 3.6], "azucar_temporada": [14.48, 11.0, 18.0], "mayor12_temporada": 0.3687, "fechas": ["2026-09-09"]}, {"tipo": "CANTALOUPE", "variedad": "C-26-24", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.529)", "ALBERCA ORTIZ VICENTE CAMPO DE (260.003.309)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.534)", "SAT 9861 AGROPEC EL ROSARIO AL (260.003.520)"], "albaranes": 8, "medidas": 40, "firmeza": [3.3, 1.8, 4.8], "azucar_temporada": [13.61, 6.0, 18.0], "mayor12_temporada": 0.0925, "fechas": ["2026-09-07", "2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}, {"tipo": "CANTALOUPE", "variedad": "C-26-28", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.558)"], "albaranes": 1, "medidas": 5, "firmeza": [2.76, 1.8, 3.4], "azucar_temporada": [15.04, 12.0, 18.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-11"]}, {"tipo": "GALIA", "variedad": "G-26-03", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL CAMPO DE (260.003.553)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.541)", "VELA LOPEZ DE LA RICA Mª PAZ A (260.003.550)"], "albaranes": 3, "medidas": 15, "firmeza": [3.81, 2.6, 4.9], "azucar_temporada": [14.67, 9.0, 18.0], "mayor12_temporada": 0.2526, "fechas": ["2026-09-07", "2026-09-08"]}, {"tipo": "GALIA", "variedad": "G-26-04", "nombre": "", "fincas": ["ESCRIBANO MINGUEZ EUGENIO AREN (260.003.521)", "LARA ANGULO JUSTO ARENALES DE (260.003.517)", "LOPEZ ESCRIBANO MIGUEL ANGEL A (260.003.508)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.540)"], "albaranes": 5, "medidas": 25, "firmeza": [3.45, 1.5, 4.8], "azucar_temporada": [13.91, 8.0, 18.0], "mayor12_temporada": 0.3022, "fechas": ["2026-09-08", "2026-09-09", "2026-09-10"]}, {"tipo": "GALIA", "variedad": "G-26-06", "nombre": "", "fincas": ["LOPEZ DE LA RICA VELA MARIO AL (260.003.307)"], "albaranes": 2, "medidas": 10, "firmeza": [3.21, 2.0, 4.5], "azucar_temporada": [14.96, 10.0, 18.0], "mayor12_temporada": 0.5096, "fechas": ["2026-09-08", "2026-09-09"]}, {"tipo": "GALIA", "variedad": "G-26-14", "nombre": "", "fincas": ["CAÑAS ESCRIBANO DANIEL CAMPO D (260.003.489)"], "albaranes": 1, "medidas": 5, "firmeza": [2.74, 1.5, 4.0], "azucar_temporada": [12.5, 8.0, 16.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-08"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-11", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL CAMPO DE (260.003.555)"], "albaranes": 1, "medidas": 5, "firmeza": [3.58, 1.8, 4.8], "azucar_temporada": [13.37, 9.0, 17.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-07"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-30", "nombre": "", "fincas": ["VELA LOPEZ DE LA RICA Mª PAZ A (260.003.542)"], "albaranes": 1, "medidas": 5, "firmeza": [2.26, 1.5, 3.8], "azucar_temporada": [15.21, 11.0, 18.0], "mayor12_temporada": 0.3166, "fechas": ["2026-09-08"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-32", "nombre": "", "fincas": ["CAÑAS ESCRIBANO DANIEL CAMPO D (260.003.549)", "PRADILLO MANZANERO PATRICIO CA (260.003.547)", "RAMOS CRUZ ANGEL ALCAZAR DE SA (260.003.516)"], "albaranes": 5, "medidas": 24, "firmeza": [2.8, 1.5, 4.6], "azucar_temporada": [13.02, 5.0, 18.0], "mayor12_temporada": 0.2126, "fechas": ["2026-09-07", "2026-09-08"]}, {"tipo": "IVORY GAYA", "variedad": "IG-26-03", "nombre": "", "fincas": ["LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.532)"], "albaranes": 1, "medidas": 5, "firmeza": [2.66, 2.0, 3.5], "azucar_temporada": [14.96, 12.0, 19.0], "mayor12_temporada": 0.2, "fechas": ["2026-09-08"]}, {"tipo": "PIEL DE SAPO", "variedad": "Z-26-03", "nombre": "", "fincas": ["FRUTAS Y VERD. DE LOBOSILLO SA (260.003.198)"], "albaranes": 1, "medidas": 5, "firmeza": [3.5, 2.8, 4.0], "azucar_temporada": [12.76, 9.0, 18.0], "mayor12_temporada": 0.6666, "fechas": ["2026-09-11"]}, {"tipo": "SUNUP", "variedad": "GC-26-02", "nombre": "", "fincas": ["SAT 9861 AGROPEC EL ROSARIO AL (260.003.514)"], "albaranes": 1, "medidas": 5, "firmeza": [4.02, 3.4, 4.5], "azucar_temporada": [15.4, 10.0, 19.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-09"]}, {"tipo": "SUNUP", "variedad": "GC-26-04", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.539)", "CAMPOS DE CASTILLA SL ARENALES (260.003.537)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.538)"], "albaranes": 11, "medidas": 55, "firmeza": [3.79, 2.2, 4.8], "azucar_temporada": [14.35, 10.0, 18.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"]}]}, {"etiqueta": "S38", "desde": "14/09/2026", "hasta": "20/09/2026", "periodo_desde": "2026-09-14", "periodo_hasta": "2026-09-20", "filas": [{"tipo": "CANTALOUPE", "variedad": "C-26-24", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.529)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.534)", "SAT 9861 AGROPEC EL ROSARIO AL (260.003.520)"], "albaranes": 3, "medidas": 15, "firmeza": [3.25, 2.2, 4.7], "azucar_temporada": [13.7, 6.0, 18.0], "mayor12_temporada": 0.011, "fechas": ["2026-09-14"]}, {"tipo": "CANTALOUPE", "variedad": "C-26-28", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.558)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.560)"], "albaranes": 3, "medidas": 15, "firmeza": [3.17, 2.1, 4.4], "azucar_temporada": [14.42, 10.5, 18.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-16", "2026-09-17"]}, {"tipo": "GALIA", "variedad": "G-26-03", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL CAMPO DE (260.003.553)"], "albaranes": 1, "medidas": 5, "firmeza": [2.74, 1.8, 3.9], "azucar_temporada": [14.14, 9.0, 18.0], "mayor12_temporada": 0.475, "fechas": ["2026-09-14"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-27", "nombre": "", "fincas": ["LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.530)"], "albaranes": 1, "medidas": 4, "firmeza": [3.2, 2.2, 3.9], "azucar_temporada": [14.32, 9.0, 18.0], "mayor12_temporada": 0.4, "fechas": ["2026-09-14"]}, {"tipo": "GALIA LARGA VIDA", "variedad": "GLV-26-28", "nombre": "", "fincas": ["CAMPOS DE CASTILLA SL CAMPO DE (260.003.554)", "LOPEZ ESCRIBANO MIGUEL ANGEL A (260.003.552)"], "albaranes": 3, "medidas": 15, "firmeza": [2.89, 2.2, 4.0], "azucar_temporada": [14.04, 8.0, 18.0], "mayor12_temporada": 0.4083, "fechas": ["2026-09-14"]}, {"tipo": "PIEL DE SAPO", "variedad": "Z-26-03", "nombre": "", "fincas": ["FRUTAS Y VERD. DE LOBOSILLO SA (260.003.198)"], "albaranes": 1, "medidas": 5, "firmeza": [2.38, 2.0, 2.7], "azucar_temporada": [12.76, 9.0, 18.0], "mayor12_temporada": 0.6666, "fechas": ["2026-09-14"]}, {"tipo": "SUNUP", "variedad": "GC-26-02", "nombre": "", "fincas": ["SAT 9861 AGROPEC EL ROSARIO AL (260.003.514)"], "albaranes": 2, "medidas": 10, "firmeza": [3.81, 3.2, 4.5], "azucar_temporada": [15.4, 10.0, 19.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-14"]}, {"tipo": "SUNUP", "variedad": "GC-26-04", "nombre": "", "fincas": ["ALBERCA ORTIZ VICENTE ARENALES (260.003.539)", "LOPEZ SANCHEZ MARI CRUZ ARENAL (260.003.538)"], "albaranes": 6, "medidas": 30, "firmeza": [3.09, 1.9, 4.2], "azucar_temporada": [14.32, 10.0, 18.0], "mayor12_temporada": 0.0, "fechas": ["2026-09-14", "2026-09-15", "2026-09-16"]}]}, {"etiqueta": "S39", "desde": "21/09/2026", "hasta": "27/09/2026", "periodo_desde": "2026-09-21", "periodo_hasta": "2026-09-27", "filas": []}, {"etiqueta": "S40", "desde": "28/09/2026", "hasta": "04/10/2026", "periodo_desde": "2026-09-28", "periodo_hasta": "2026-09-30", "filas": []}]};
+const fmt = (n, d = 1) => n == null ? "—" : n.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fFecha = iso => new Date(iso + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pos = v => ((Math.min(Math.max(v, 1), 5) - 1) / 4 * 100).toFixed(1) + "%";
+
+document.getElementById("eyebrow").textContent =
+  `${fFecha(DATOS.desde)} – ${fFecha(DATOS.hasta)} 2026 · ${DATOS.origen}`;
+document.getElementById("intro").textContent =
+  `Una tarjeta por semana (lunes a domingo) con cada variedad que tuvo escandallo, agrupada por tipo de melón. ` +
+  `El volcado llega hasta el ${fFecha(DATOS.ultima_fecha_volcado)}.`;
+
+const nav = document.getElementById("nav"), cards = document.getElementById("cards");
+for (const s of DATOS.semanas) {
+  const filas = s.filas, vacia = !filas.length;
+  const fincas = new Set(filas.flatMap(f => f.fincas));
+  const medidas = filas.reduce((a, f) => a + f.medidas, 0);
+  const media = medidas ? filas.reduce((a, f) => a + f.firmeza[0] * f.medidas, 0) / medidas : null;
+  const parcial = s.periodo_desde !== isoDe(s.desde) || s.periodo_hasta !== isoDe(s.hasta);
+
+  nav.insertAdjacentHTML("beforeend",
+    `<a href="#${s.etiqueta}" class="${vacia ? "vacia" : ""}">${s.etiqueta}<small>${vacia ? "sin datos" : filas.length + " var."}</small></a>`);
+
+  const tipos = [...new Set(filas.map(f => f.tipo))];
+  const cuerpo = vacia
+    ? `<div class="empty">Sin escandallos registrados esta semana${new Date(s.periodo_desde) > new Date(DATOS.ultima_fecha_volcado)
+        ? ` (el volcado termina el ${fFecha(DATOS.ultima_fecha_volcado)})` : ""}.</div>`
+    : `<div class="card-body">${tipos.map(t => tablaTipo(t, filas.filter(f => f.tipo === t))).join("")}</div>`;
+
+  cards.insertAdjacentHTML("beforeend", `
+    <section class="card" id="${s.etiqueta}" aria-label="Semana ${s.etiqueta}">
+      <div class="card-head">
+        <div class="week"><b>${s.etiqueta}</b>
+          <span><span class="rango">${fFecha(s.periodo_desde)} – ${fFecha(s.periodo_hasta)}</span>
+          ${parcial ? `semana completa ${s.desde.slice(0, 5)} – ${s.hasta.slice(0, 5)}` : "lunes a domingo"}</span></div>
+        <dl class="stats">
+          ${stat("Tipos", tipos.length)}${stat("Variedades", filas.length)}${stat("Fincas", fincas.size)}
+          ${stat("Medidas firmeza", medidas)}${stat("Firmeza media", fmt(media, 2))}
+        </dl>
+      </div>${cuerpo}
+    </section>`);
+}
+
+function isoDe(dmy) { const [d, m, y] = dmy.split("/"); return `${y}-${m}-${d}`; }
+function stat(k, v) { return `<div class="stat"><dt>${k}</dt><dd>${v}</dd></div>`; }
+function tablaTipo(tipo, filas) {
+  return `<div class="tipo">${esc(tipo)}</div><div class="scroll"><table>
+    <thead><tr><th>Variedad</th><th>Fincas</th><th class="num">Albaranes</th><th class="num">Medidas</th>
+      <th>Firmeza semana (1–5)</th><th>Azúcar °Brix</th><th class="num">&gt;12 °Brix</th></tr></thead>
+    <tbody>${filas.map(f => `<tr>
+      <td class="var"><b>${esc(f.variedad)}</b><small>${f.nombre ? esc(f.nombre) : "nombre pendiente"}</small></td>
+      <td><details><summary>${f.fincas.length} finca${f.fincas.length > 1 ? "s" : ""}</summary>
+        <ul>${f.fincas.map(x => `<li>${esc(x)}</li>`).join("")}</ul></details></td>
+      <td class="num">${f.albaranes}</td><td class="num">${f.medidas}</td>
+      <td><div class="firm"><div class="scale" role="img" aria-label="Firmeza de ${f.firmeza[1]} a ${f.firmeza[2]}, media ${f.firmeza[0]}">
+          <div class="r" style="left:${pos(f.firmeza[1])};right:calc(100% - ${pos(f.firmeza[2])})"></div>
+          <div class="m" style="left:${pos(f.firmeza[0])}"></div></div>
+        <span class="v">${fmt(f.firmeza[0], 2)} <small>${fmt(f.firmeza[1])}–${fmt(f.firmeza[2])}</small></span></div></td>
+      <td class="az">${f.azucar_temporada[0] == null ? "—" :
+        `${fmt(f.azucar_temporada[0])} <small>${fmt(f.azucar_temporada[1])}–${fmt(f.azucar_temporada[2])}</small><span class="tag">temp.</span>`}</td>
+      <td class="num">${f.mayor12_temporada == null ? "—" : Math.round(f.mayor12_temporada * 100) + " %"}</td>
+    </tr>`).join("")}</tbody></table></div>`;
+}
+</script>
