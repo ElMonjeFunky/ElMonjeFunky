@@ -1,0 +1,195 @@
+<title>Semanas de escandallo 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera con la tira de las 53 semanas (navegación) y leyenda de tipos -> meses -> rejilla de tarjetas semanales */
+:root {
+  --bg: #f3f4ee; --surface: #fdfdfb; --ink: #1c221b; --muted: #687163; --line: #dcE1d4; --empty: #eceee6;
+  --rind: #2e5935; --rind-soft: #e3ecdc; --now: #c96a1f;
+  --t-amarillo: #d9a400; --t-cantaloupe: #e07b2a; --t-charentais: #c9572f; --t-galia: #6f9e2b; --t-glv: #2f8a6c;
+  --t-ivory: #a39470; --t-orange: #e0614a; --t-sapo: #2f5a36; --t-sunup: #b8862a; --t-otro: #7a8075;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121611; --surface: #1a1f18; --ink: #e6eae1; --muted: #9aa393; --line: #2c3328; --empty: #161a14;
+  --rind: #94c58a; --rind-soft: #222d1e; --now: #f0a15e;
+  --t-amarillo: #f2c84b; --t-cantaloupe: #f39b56; --t-charentais: #ec8462; --t-galia: #a6cf63; --t-glv: #5fc4a0;
+  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121611; --surface: #1a1f18; --ink: #e6eae1; --muted: #9aa393; --line: #2c3328; --empty: #161a14;
+  --rind: #94c58a; --rind-soft: #222d1e; --now: #f0a15e;
+  --t-amarillo: #f2c84b; --t-cantaloupe: #f39b56; --t-charentais: #ec8462; --t-galia: #a6cf63; --t-glv: #5fc4a0;
+  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 34px; }
+
+header { display: grid; gap: 14px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font: 800 clamp(30px, 5vw, 52px)/1.02 var(--display); color: var(--rind); text-wrap: balance; letter-spacing: -.01em; }
+.intro { margin: 0; color: var(--muted); max-width: 70ch; }
+
+/* Tira anual: una barra por semana, altura = nº de variedades */
+.strip-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px 10px; display: grid; gap: 6px; }
+.strip-scroll { overflow-x: auto; }
+.strip { display: grid; grid-template-columns: repeat(53, minmax(12px, 1fr)); gap: 3px; align-items: end; height: 76px; min-width: 700px; }
+.strip a { display: block; border-radius: 3px 3px 1px 1px; background: var(--rind); min-height: 4px; opacity: .85; }
+.strip a.vacia { background: var(--line); opacity: 1; }
+.strip a.hoy { outline: 2px solid var(--now); outline-offset: 2px; }
+.strip a:hover, .strip a:focus-visible { opacity: 1; outline: 2px solid var(--ink); outline-offset: 1px; }
+.strip-meses { display: grid; grid-template-columns: repeat(53, minmax(12px, 1fr)); gap: 3px; min-width: 700px;
+  font: 500 10.5px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.strip-meses span { white-space: nowrap; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.legend button { font: 600 13px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 12px 4px 9px; display: inline-flex; gap: 7px; align-items: center; cursor: pointer; }
+.legend button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.legend button:focus-visible { outline: 2px solid var(--rind); outline-offset: 2px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.legend small { font: 400 12px var(--mono); color: var(--muted); }
+
+/* Meses y tarjetas */
+.mes { display: grid; gap: 14px; }
+.mes h2 { margin: 0; font: 500 22px var(--display); display: flex; align-items: baseline; gap: 12px; }
+.mes h2 small { font: 400 12px var(--mono); color: var(--muted); letter-spacing: .04em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap: 14px; align-items: start; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px 16px;
+  display: grid; gap: 12px; scroll-margin-top: 16px; min-width: 0; }
+.card.vacia { background: var(--empty); border-style: dashed; }
+.card.hoy { border-color: var(--now); box-shadow: 0 0 0 1px var(--now); }
+.card-head { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.sem { font: 800 30px/1 var(--display); color: var(--rind); }
+.vacia .sem { color: var(--muted); }
+.rango { display: block; font-weight: 600; margin-top: 4px; white-space: nowrap; }
+.cuenta { font: 500 11.5px var(--mono); color: var(--muted); text-align: right; white-space: nowrap; }
+.badge { display: inline-block; margin-bottom: 4px; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--surface); background: var(--now); border-radius: 4px; padding: 1px 6px; }
+.sin { color: var(--muted); font-size: 14px; }
+
+.tipos { display: grid; gap: 10px; }
+.tipo { display: grid; gap: 5px; }
+.tipo-nom { display: flex; gap: 7px; align-items: center; font: 500 11.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.vars { display: flex; flex-wrap: wrap; gap: 5px; }
+.var { font: 500 12.5px var(--mono); padding: 2px 8px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  background: color-mix(in srgb, var(--c) 13%, var(--surface)); color: var(--ink); line-height: 1.45; }
+.var em { font: 600 12.5px var(--body); font-style: normal; display: block; }
+.card [data-tipo].apagado { display: none; }
+.card.filtrada-vacia .tipos { display: none; }
+.card.filtrada-vacia .filtro-sin { display: block; }
+.filtro-sin { display: none; color: var(--muted); font-size: 14px; }
+
+footer { color: var(--muted); font-size: 13.5px; max-width: 80ch; border-left: 3px solid var(--line); padding-left: 12px; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow"></div>
+    <h1>Semanas de escandallo 2026</h1>
+    <p class="intro" id="intro"></p>
+    <div class="strip-box">
+      <div class="strip-scroll">
+        <div class="strip" id="strip" aria-label="Variedades con escandallo por semana"></div>
+        <div class="strip-meses" id="strip-meses" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="legend" id="legend" aria-label="Filtrar por tipo de melón"></div>
+  </header>
+  <main id="meses" style="display:grid;gap:34px"></main>
+  <footer id="pie"></footer>
+</div>
+
+<script>
+const DATOS = /*__DATOS__*/null;
+const COLOR = { "AMARILLO": "--t-amarillo", "CANTALOUPE": "--t-cantaloupe", "CHARENTAIS": "--t-charentais",
+  "GALIA": "--t-galia", "GALIA LARGA VIDA": "--t-glv", "IVORY GAYA": "--t-ivory", "ORANGE CANDY": "--t-orange",
+  "PIEL DE SAPO": "--t-sapo", "SUNUP": "--t-sunup" };
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const col = t => `var(${COLOR[t] || "--t-otro"})`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const dia = dmy => { const [d, m, y] = dmy.split("/").map(Number); return new Date(y, m - 1, d); };
+const corto = f => f.toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "");
+const iso = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+
+const hoy = iso(DATOS.hoy);
+const semanas = DATOS.semanas.map(s => {
+  const ini = dia(s.desde), fin = dia(s.hasta);
+  const jueves = new Date(ini); jueves.setDate(ini.getDate() + 3);       // el mes de la semana es el de su jueves (ISO)
+  const nVar = s.tipos.reduce((a, t) => a + t.variedades.length, 0);
+  return { ...s, ini, fin, mes: jueves.getMonth(), nVar, hoy: hoy >= ini && hoy <= fin };
+});
+const maxVar = Math.max(1, ...semanas.map(s => s.nVar));
+const conDatos = semanas.filter(s => s.nVar);
+const totalesTipo = {};
+semanas.forEach(s => s.tipos.forEach(t => totalesTipo[t.tipo] = (totalesTipo[t.tipo] || 0) + 1));
+
+document.getElementById("eyebrow").textContent = `Melón · ${DATOS.origen}`;
+document.getElementById("intro").textContent =
+  `Las 53 semanas del año, de lunes a domingo, con las variedades que tuvieron escandallo cada semana. ` +
+  `Hay datos en ${conDatos.length} semanas, del ${corto(iso(DATOS.primera))} al ${corto(iso(DATOS.ultima))}.`;
+
+// Tira anual
+const strip = document.getElementById("strip"), stripMeses = document.getElementById("strip-meses");
+let mesPrevio = -1;
+semanas.forEach(s => {
+  strip.insertAdjacentHTML("beforeend", `<a href="#${s.etiqueta}" class="${s.nVar ? "" : "vacia"} ${s.hoy ? "hoy" : ""}"
+    style="height:${s.nVar ? 10 + s.nVar / maxVar * 90 : 6}%" title="${s.etiqueta} · ${s.nVar} variedades"
+    aria-label="${s.etiqueta}, ${s.nVar} variedades"></a>`);
+  stripMeses.insertAdjacentHTML("beforeend", `<span>${s.mes !== mesPrevio ? MESES[s.mes].slice(0, 3) : ""}</span>`);
+  mesPrevio = s.mes;
+});
+
+// Leyenda / filtro
+const legend = document.getElementById("legend");
+let filtro = null;
+Object.keys(totalesTipo).sort().forEach(t => legend.insertAdjacentHTML("beforeend",
+  `<button type="button" id="f-${t.replace(/\W/g, "")}" data-t="${esc(t)}" aria-pressed="false" style="--c:${col(t)}">
+     <span class="dot"></span>${esc(t)}<small>${totalesTipo[t]} sem.</small></button>`));
+legend.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  filtro = filtro === b.dataset.t ? null : b.dataset.t;
+  legend.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x.dataset.t === filtro));
+  document.querySelectorAll(".card").forEach(c => {
+    let visibles = 0;
+    c.querySelectorAll("[data-tipo]").forEach(t => {
+      const off = filtro && t.dataset.tipo !== filtro; t.classList.toggle("apagado", off); if (!off) visibles++;
+    });
+    c.classList.toggle("filtrada-vacia", !!filtro && !c.classList.contains("vacia") && !visibles);
+  });
+});
+
+// Tarjetas por mes
+const main = document.getElementById("meses");
+MESES.forEach((nombre, m) => {
+  const del = semanas.filter(s => s.mes === m);
+  if (!del.length) return;
+  const n = del.filter(s => s.nVar).length;
+  main.insertAdjacentHTML("beforeend", `<section class="mes"><h2>${nombre}
+      <small>${del[0].etiqueta}–${del[del.length - 1].etiqueta} · ${n ? n + " con datos" : "sin datos"}</small></h2>
+    <div class="grid">${del.map(tarjeta).join("")}</div></section>`);
+});
+
+function tarjeta(s) {
+  const cab = `<div class="card-head"><div><div class="sem">${s.etiqueta}</div>
+      <span class="rango">${corto(s.ini)} – ${corto(s.fin)}</span></div>
+    <div class="cuenta">${s.hoy ? `<span class="badge">Esta semana</span><br>` : ""}${s.nVar
+      ? `${s.nVar} var. · ${s.tipos.length} tipo${s.tipos.length > 1 ? "s" : ""}` : ""}</div></div>`;
+  if (!s.nVar) return `<article class="card vacia ${s.hoy ? "hoy" : ""}" id="${s.etiqueta}">${cab}<div class="sin">Sin escandallos</div></article>`;
+  return `<article class="card ${s.hoy ? "hoy" : ""}" id="${s.etiqueta}">${cab}<div class="tipos">${s.tipos.map(t => `
+      <div class="tipo" data-tipo="${esc(t.tipo)}" style="--c:${col(t.tipo)}">
+        <div class="tipo-nom"><span class="dot"></span>${esc(t.tipo)}</div>
+        <div class="vars">${t.variedades.map(v => `<span class="var" title="${v.fincas} finca${v.fincas > 1 ? "s" : ""}">${
+          v.nombre ? `<em>${esc(v.nombre)}</em>` : ""}${esc(v.codigo)}</span>`).join("")}</div>
+      </div>`).join("")}</div><div class="filtro-sin">Sin este tipo esta semana</div></article>`;
+}
+
+document.getElementById("pie").textContent =
+  `La semana de cada escandallo sale de la fecha de sus medidas de firmeza. ` +
+  (DATOS.sin_fecha ? `${DATOS.sin_fecha} escandallos no tienen ninguna medida con fecha y no aparecen en ninguna semana. ` : "") +
+  `Los nombres de variedad aparecerán sobre cada código cuando se completen.`;
+</script>
