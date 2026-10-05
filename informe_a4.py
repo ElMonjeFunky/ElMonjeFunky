@@ -120,7 +120,7 @@ a{color:#2e5935}a:hover{color:#1d3a22}
 .bandas em{display:block;font-style:normal;font-size:7px;color:#4f584b}
 .kpi .scale{width:100%;height:7px}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
-col.c-v{width:27%}col.c-s{width:5%}col.c-f{width:6%}col.c-mm{width:9.5%}col.c-bar{width:8%}col.c-b{width:4.5%}
+col.c-v{width:33%}col.c-s{width:3.6%}col.c-f{width:5.4%}col.c-mm{width:9%}col.c-bar{width:7%}col.c-b{width:4.4%}
 th{height:17px;padding:0 3px;font:500 7.5px/17px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;color:#4f584b;text-align:right;white-space:nowrap;overflow:hidden}
 th.l{text-align:left}
 tr.g th{text-align:center;border-bottom:1px solid #cdd3c4}
@@ -173,7 +173,7 @@ def tabla_semana(s):
             '<col class="c-b"><col class="c-b"><col class="c-b"><col class="c-b"></colgroup>'
             '<thead><tr class="g"><th colspan="4"></th><th colspan="3" class="gfz">Firmeza · escala 1–5</th>'
             '<th colspan="6" class="gaz">Azúcar °Brix · temporada</th></tr>'
-            '<tr><th class="l">Tipo / variedad</th><th>Fincas</th><th>Alb.</th><th>Medidas</th><th>Media</th>'
+            '<tr><th class="l">Tipo / variedad</th><th>Fin.</th><th>Alb.</th><th>Medidas</th><th>Media</th>'
             '<th>Mín–máx</th><th></th><th>Medio</th><th>Mín–máx</th><th>&lt;9</th><th>9–10</th><th>10–12</th>'
             f'<th>≥12</th></tr></thead><tbody>{"".join(cuerpo)}</tbody></table>')
 
