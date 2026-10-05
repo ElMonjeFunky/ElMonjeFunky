@@ -120,7 +120,9 @@ def estadisticas(bloques):
             continue
         n = muestras_estimadas(pcts) or 100
         n_total += n
-        mayor12 += b["rangos"].get("MAYORES DE 12", 0) / 100 * n
+        # "MAYORES DE 12" del ERP incluye el 12; se calcula de la distribución porque
+        # algunos bloques usan otros rangos (ENTRE 12 Y 14, MAYORES DE 14)
+        mayor12 += sum(p for v, p in b["azucar"] if v >= 12) / 100 * n
         for v, p in b["azucar"]:
             conteo[v] += p / 100 * n
     fv = [v for b in bloques for _, _, v in b["firmeza"]]
@@ -186,7 +188,7 @@ def main():
         tot = sum(p for _, p in az)
         az_stats = [round(sum(v * p for v, p in az) / tot, 2), min(v for v, _ in az),
                     max(v for v, _ in az), muestras_estimadas([p for _, p in az])] if tot else [None] * 4
-        mayor12 = b["rangos"].get("MAYORES DE 12", 0) / 100 if tot else None
+        mayor12 = sum(p for v, p in az if v >= 12) / tot if tot else None
         fv = [v for _, _, v in b["firmeza"]]
         fechas = [f for f, _, _ in b["firmeza"]]
         fz = [len(fv), round(mean(fv), 2), min(fv), max(fv)] if fv else [0, None, None, None]
@@ -214,7 +216,7 @@ def main():
     for b in bloques:
         arbol[tipo_y_categoria(b["producto"])[0]][b["variedad"]].append(b)
     cab_stats = ["Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)",
-                 "% > 12 °Brix", "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx"]
+                 "% ≥ 12 °Brix", "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx"]
     filas_arbol, niveles, plano = [], [], []
     for tipo in sorted(arbol):
         variedades = arbol[tipo]
@@ -261,7 +263,7 @@ def main():
     anchos_comunes = [17, 6, 16, 18, 13, 34]
 
     ws = hoja(wb, "Variedad x Finca", comunes + [
-        "Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)", "% > 12 °Brix",
+        "Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)", "% ≥ 12 °Brix",
         "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx",
         "Primera fecha", "Última fecha", "Semanas con firmeza"], resumen,
         {"G": "0.00", "K": "0%", "M": "0.00", "P": "dd/mm/yyyy", "Q": "dd/mm/yyyy"},
@@ -291,7 +293,7 @@ def main():
         "AZÚCAR: el volcado solo da el % de muestras por cada valor de °Brix (sección 'VALORES DE AZUCAR V') para toda la temporada del bloque, SIN FECHA.",
         "  Media = media ponderada por ese %. Mín/Máx = valores con % > 0. Muestras (estim.) = nº mínimo de muestras compatible con los % (3,33 % -> 30).",
         "  Por eso el azúcar NO se puede dar por semana con este volcado.",
-        "% > 12 °Brix = sección 'VALORES DE AZUCAR' (rango MAYORES DE 12).",
+        "% ≥ 12 °Brix = % de muestras con 12 °Brix o más (equivale al rango MAYORES DE 12 del ERP).",
         "FIRMEZA: una fila por medida con su fecha (20.260.605 = 05/06/2026) y albarán. Media/mín/máx calculados sobre todas las medidas.",
         "  Escala de firmeza 1-5 (columnas MIN/MAX del volcado; en unas pocas filas vienen mal escritas y se ignoran).",
         "  Medidas por encima de 5 (23, 27, 33, 41, 45: falta la coma) se excluyen; las de menos de 1 se mantienen. Todas aparecen en la hoja 'Revisar'.",
