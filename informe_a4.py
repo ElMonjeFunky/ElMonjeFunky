@@ -31,6 +31,10 @@ CAB = 92                       # alto de la cabecera de semana
 THEAD = 34                     # dos filas de cabecera de tabla
 UTIL_TABLA = H - 2 * PAD - PIE - CAB - 10 - THEAD
 FILA_MAX, FILA_MIN = 21, 15
+# (cabecera, ancho relativo, clase): fincas y albaranes estrechos para dar sitio a la variedad
+COLUMNAS = [("Tipo / variedad", 33, "l"), ("Fin.", 3.6, ""), ("Alb.", 3.6, ""), ("Medidas", 5.4, ""),
+            ("Media", 5.4, ""), ("Mín–máx", 9, ""), ("", 7, ""), ("Medio", 5.4, ""), ("Mín–máx", 9, ""),
+            ("&lt;9", 4.4, ""), ("9–10", 4.4, ""), ("10–12", 4.4, ""), ("≥12", 4.4, "")]
 
 MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 COLOR = {"AMARILLO": "#c99700", "CANTALOUPE": "#d9701f", "CHARENTAIS": "#c0502a", "GALIA": "#5f8f22",
@@ -120,11 +124,10 @@ a{color:#2e5935}a:hover{color:#1d3a22}
 .bandas em{display:block;font-style:normal;font-size:7px;color:#4f584b}
 .kpi .scale{width:100%;height:7px}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
-col.c-v{width:33%}col.c-s{width:3.6%}col.c-f{width:5.4%}col.c-mm{width:9%}col.c-bar{width:7%}col.c-b{width:4.4%}
+.grp{display:flex;height:15px;font:500 7.5px/14px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.grp span{text-align:center;overflow:hidden}.grp .gfz{color:#2e5935;border-bottom:1px solid #cdd3c4}.grp .gaz{color:#a24e15;border-bottom:1px solid #cdd3c4}
 th{height:17px;padding:0 3px;font:500 7.5px/17px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;color:#4f584b;text-align:right;white-space:nowrap;overflow:hidden}
 th.l{text-align:left}
-tr.g th{text-align:center;border-bottom:1px solid #cdd3c4}
-th.gfz{color:#2e5935}th.gaz{color:#a24e15}
 td{padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;font:400 9.5px "IBM Plex Mono",Consolas,monospace;border-top:1px solid #e3e7dc;box-sizing:border-box}
 td.l{text-align:left;font:400 10px "Source Sans 3","Segoe UI",Arial,sans-serif}
 tr.t td{background:color-mix(in srgb,var(--c) 14%,white);border-top:1.5px solid var(--c);font-weight:600}
@@ -162,20 +165,22 @@ def tabla_semana(s):
     cuerpo = []
     for t in s["tipos"]:
         cuerpo.append(fila("t", f'<i></i>{e(t["tipo"])} · {len(t["variedades"])} var.', t["total"],
-                           f' style="--c:{COLOR.get(t["tipo"], "#6b7466")}"'))
+                           f' style="height:{alto}px;--c:{COLOR.get(t["tipo"], "#6b7466")}"'))
         for v in t["variedades"]:
             nombre = e(v["nombre"]) if v["nombre"] else "sin nombre"
             largo = ' class="lg"' if len(v["codigo"]) + len(v["nombre"]) > 30 else ""
-            cuerpo.append(fila("v", f'<span class="code">{e(v["codigo"])}</span><b{largo}>{nombre}</b>', v))
-    return (f'<style>.s-{s["etiqueta"]} td{{height:{alto}px}}</style>'
-            f'<table class="s-{s["etiqueta"]}"><colgroup><col class="c-v"><col class="c-s"><col class="c-s"><col class="c-f">'
-            '<col class="c-f"><col class="c-mm"><col class="c-bar"><col class="c-f"><col class="c-mm">'
-            '<col class="c-b"><col class="c-b"><col class="c-b"><col class="c-b"></colgroup>'
-            '<thead><tr class="g"><th colspan="4"></th><th colspan="3" class="gfz">Firmeza · escala 1–5</th>'
-            '<th colspan="6" class="gaz">Azúcar °Brix · temporada</th></tr>'
-            '<tr><th class="l">Tipo / variedad</th><th>Fin.</th><th>Alb.</th><th>Medidas</th><th>Media</th>'
-            '<th>Mín–máx</th><th></th><th>Medio</th><th>Mín–máx</th><th>&lt;9</th><th>9–10</th><th>10–12</th>'
-            f'<th>≥12</th></tr></thead><tbody>{"".join(cuerpo)}</tbody></table>')
+            cuerpo.append(fila("v", f'<span class="code">{e(v["codigo"])}</span><b{largo}>{nombre}</b>', v,
+                               f' style="height:{alto}px"'))
+    # Anchos y altos en estilo en línea: el editor de Design no conserva <colgroup>
+    total = sum(w for _, w, _ in COLUMNAS)
+    ths = "".join(f'<th class="{c}" style="width:{w / total * 100:.2f}%">{t}</th>' for t, w, c in COLUMNAS)
+    p_fz = sum(w for _, w, _ in COLUMNAS[4:7]) / total * 100
+    p_az = sum(w for _, w, _ in COLUMNAS[7:]) / total * 100
+    banda = (f'<div class="grp"><span style="width:{100 - p_fz - p_az:.2f}%"></span>'
+             f'<span class="gfz" style="width:{p_fz:.2f}%">Firmeza · escala 1–5</span>'
+             f'<span class="gaz" style="width:{p_az:.2f}%">Azúcar °Brix · temporada</span></div>')
+    cuerpo = "".join(cuerpo)
+    return f'{banda}<table><thead><tr>{ths}</tr></thead><tbody>{cuerpo}</tbody></table>'
 
 
 def pagina_semana(s):
