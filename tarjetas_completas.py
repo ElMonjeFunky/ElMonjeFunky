@@ -31,6 +31,7 @@ def resumen(items):
         "firmeza": [round(mean(valores), 2), min(valores), max(valores)] if valores else None,
         "azucar": az[:3] if az[0] is not None else None,
         "bandas": bandas_azucar([b for b, _ in items]),
+        "muestras_azucar": az[3] if az[0] is not None else None,
     }
 
 

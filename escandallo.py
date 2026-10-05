@@ -54,9 +54,16 @@ def tipo_y_categoria(producto):
 
 
 def muestras_estimadas(pcts):
-    """Nº de muestras más pequeño compatible con los porcentajes (3,33 % -> 30)."""
-    for n in range(1, 501):
-        if all(abs(p * n / 100 - round(p * n / 100)) < 0.06 for p in pcts):
+    """Nº de muestras de azúcar de un bloque, deducido de sus porcentajes.
+
+    El ERP no da el nº de muestras, solo el % de cada valor de °Brix con dos
+    decimales. Se busca el menor N con el que cada % sale de un número entero
+    de muestras (k/N redondeado a 2 decimales = % del ERP) y esos enteros suman N.
+    Ej.: 0,47 % · 0,94 % · 4,73 % ... -> N = 211 (1, 2, 10 ... muestras).
+    """
+    for n in range(1, 5001):
+        ks = [round(p * n / 100) for p in pcts]
+        if sum(ks) == n and all(k > 0 and abs(round(100 * k / n, 2) - p) <= 0.011 for k, p in zip(ks, pcts)):
             return n
     return None
 
@@ -109,25 +116,34 @@ def cargar_variedades(ruta):
         return {r["codigo"].strip(): r["nombre"].strip() for r in csv.DictReader(fh) if r.get("nombre")}
 
 
-def estadisticas(bloques):
-    """Azúcar y firmeza juntando varios bloques. El azúcar de cada bloque pesa
-    según su nº de muestras estimado; la firmeza junta todas las medidas."""
-    conteo = defaultdict(float)
-    mayor12 = n_total = 0
+def muestras_azucar(b):
+    """{°Brix: nº de muestras} de un bloque: cada % del ERP pasado a muestras
+    enteras con el nº de muestras deducido (0,47 % de 211 -> 1 muestra)."""
+    pcts = [p for _, p in b["azucar"]]
+    if not pcts:
+        return {}
+    n = muestras_estimadas(pcts)
+    return {v: round(p * n / 100) for v, p in b["azucar"]}
+
+
+def conteo_azucar(bloques):
+    """Muestras de azúcar de varios bloques juntas: {°Brix: nº de muestras}."""
+    conteo = defaultdict(int)
     for b in bloques:
-        pcts = [p for _, p in b["azucar"]]
-        if not pcts:
-            continue
-        n = muestras_estimadas(pcts) or 100
-        n_total += n
-        # "MAYORES DE 12" del ERP incluye el 12; se calcula de la distribución porque
-        # algunos bloques usan otros rangos (ENTRE 12 Y 14, MAYORES DE 14)
-        mayor12 += sum(p for v, p in b["azucar"] if v >= 12) / 100 * n
-        for v, p in b["azucar"]:
-            conteo[v] += p / 100 * n
+        for v, k in muestras_azucar(b).items():
+            conteo[v] += k
+    return conteo
+
+
+def estadisticas(bloques):
+    """Azúcar y firmeza juntando varios bloques. El azúcar se cuenta en muestras
+    enteras (ver muestras_azucar); la firmeza junta todas las medidas."""
+    conteo = conteo_azucar(bloques)
+    n_total = sum(conteo.values())
     fv = [v for b in bloques for _, _, v in b["firmeza"]]
-    az = ([round(sum(v * c for v, c in conteo.items()) / sum(conteo.values()), 2),
-           min(conteo), max(conteo), n_total, round(mayor12 / n_total, 4)] if n_total else [None] * 5)
+    # el 12 exacto cuenta como "mayor de 12", igual que en el ERP
+    az = ([round(sum(v * k for v, k in conteo.items()) / n_total, 2), min(conteo), max(conteo), n_total,
+           round(sum(k for v, k in conteo.items() if v >= 12) / n_total, 4)] if n_total else [None] * 5)
     fz = [len(fv), round(mean(fv), 2), min(fv), max(fv)] if fv else [0, None, None, None]
     return az + fz
 
@@ -140,19 +156,13 @@ BANDAS = [("<9", None, 9), ("9–10", 9, 10), ("10–12", 10, 12), ("≥12", 12,
 
 
 def bandas_azucar(bloques):
-    """% de muestras de azúcar en cada rango, juntando bloques (cada uno pesa
-    según su nº de muestras estimado). None si no hay azúcar."""
-    suma, n_total = [0.0] * len(BANDAS), 0
-    for b in bloques:
-        if not b["azucar"]:
-            continue
-        n = muestras_estimadas([p for _, p in b["azucar"]]) or 100
-        tot = sum(p for _, p in b["azucar"])
-        n_total += n
-        for i, (_, lo, hi) in enumerate(BANDAS):
-            dentro = sum(p for v, p in b["azucar"] if (lo is None or v >= lo) and (hi is None or v < hi))
-            suma[i] += dentro / tot * n
-    return [round(x / n_total, 4) for x in suma] if n_total else None
+    """% de muestras de azúcar en cada rango (sobre muestras enteras). None si no hay azúcar."""
+    conteo = conteo_azucar(bloques)
+    n_total = sum(conteo.values())
+    if not n_total:
+        return None
+    return [sum(k for v, k in conteo.items() if (lo is None or v >= lo) and (hi is None or v < hi)) / n_total
+            for _, lo, hi in BANDAS]
 
 
 # --- Excel -----------------------------------------------------------------
@@ -208,10 +218,8 @@ def main():
         tipo, cat = tipo_y_categoria(b["producto"])
         clave = [tipo, cat, b["variedad"], nombres.get(b["variedad"], ""), b["cod_finca"], b["finca"]]
         az = b["azucar"]
-        tot = sum(p for _, p in az)
-        az_stats = [round(sum(v * p for v, p in az) / tot, 2), min(v for v, _ in az),
-                    max(v for v, _ in az), muestras_estimadas([p for _, p in az])] if tot else [None] * 4
-        mayor12 = sum(p for v, p in az if v >= 12) / tot if tot else None
+        st = estadisticas([b])
+        az_stats, mayor12 = st[:4], st[4]
         fv = [v for _, _, v in b["firmeza"]]
         fechas = [f for f, _, _ in b["firmeza"]]
         fz = [len(fv), round(mean(fv), 2), min(fv), max(fv)] if fv else [0, None, None, None]
@@ -238,7 +246,7 @@ def main():
     arbol = defaultdict(lambda: defaultdict(list))
     for b in bloques:
         arbol[tipo_y_categoria(b["producto"])[0]][b["variedad"]].append(b)
-    cab_stats = ["Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)",
+    cab_stats = ["Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (deducidas)",
                  "% ≥ 12 °Brix", "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx"]
     filas_arbol, niveles, plano = [], [], []
     for tipo in sorted(arbol):
@@ -286,7 +294,7 @@ def main():
     anchos_comunes = [17, 6, 16, 18, 13, 34]
 
     ws = hoja(wb, "Variedad x Finca", comunes + [
-        "Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (estim.)", "% ≥ 12 °Brix",
+        "Azúcar media (°Brix)", "Azúcar mín", "Azúcar máx", "Muestras azúcar (deducidas)", "% ≥ 12 °Brix",
         "Firmeza nº medidas", "Firmeza media", "Firmeza mín", "Firmeza máx",
         "Primera fecha", "Última fecha", "Semanas con firmeza"], resumen,
         {"G": "0.00", "K": "0%", "M": "0.00", "P": "dd/mm/yyyy", "Q": "dd/mm/yyyy"},

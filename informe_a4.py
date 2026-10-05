@@ -28,13 +28,15 @@ W, H = 794, 1123
 PAD = 38                       # margen de la hoja
 PIE = 30                       # alto del pie
 CAB = 92                       # alto de la cabecera de semana
-THEAD = 34                     # dos filas de cabecera de tabla
+THEAD = 39                     # dos filas de cabecera de tabla
 UTIL_TABLA = H - 2 * PAD - PIE - CAB - 10 - THEAD
 FILA_MAX, FILA_MIN = 21, 15
 # (cabecera, ancho relativo, clase): fincas y albaranes estrechos para dar sitio a la variedad
-COLUMNAS = [("Tipo / variedad", 33, "l"), ("Fin.", 3.6, ""), ("Alb.", 3.6, ""), ("Medidas", 5.4, ""),
-            ("Media", 5.4, ""), ("Mín–máx", 9, ""), ("", 7, ""), ("Medio", 5.4, ""), ("Mín–máx", 9, ""),
-            ("&lt;9", 4.4, ""), ("9–10", 4.4, ""), ("10–12", 4.4, ""), ("≥12", 4.4, "")]
+COLUMNAS = [("Tipo / variedad", 28.9, "l"), ("Fin.", 3.3, ""), ("Alb.", 3.3, ""),
+            ("Nº<br>medidas", 5.6, "sep"), ("Media", 4.9, ""), ("Mín–máx", 8.2, ""), ("", 5.6, ""),
+            ("Nº<br>muestras", 6.4, "sep"), ("Medio", 4.6, ""), ("Mín–máx", 8.2, ""),
+            ("%&lt;9", 5.25, ""), ("%9–10", 5.25, ""), ("%10–12", 5.25, ""), ("%≥12", 5.25, "")]
+GRUPO_FZ, GRUPO_AZ = range(3, 7), range(7, 14)   # columnas de cada bloque (índices en COLUMNAS)
 
 MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
 COLOR = {"AMARILLO": "#c99700", "CANTALOUPE": "#d9701f", "CHARENTAIS": "#c0502a", "GALIA": "#5f8f22",
@@ -59,7 +61,12 @@ def n(v, dec=1):
 
 
 def pct(v):
-    return "—" if v is None else f"{round(v * 100)}%"
+    return "—" if v is None else f"{v * 100:.1f}%".replace(".", ",")
+
+
+def pct2(v):
+    """% con dos decimales y sin símbolo: % × Nº muestras da las muestras exactas."""
+    return "—" if v is None else f"{v * 100:.2f}".replace(".", ",")
 
 
 def entero(v):
@@ -126,7 +133,7 @@ a{color:#2e5935}a:hover{color:#1d3a22}
 table{width:100%;border-collapse:collapse;table-layout:fixed}
 .grp{display:flex;height:15px;font:500 7.5px/14px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .grp span{text-align:center;overflow:hidden}.grp .gfz{color:#2e5935;border-bottom:1px solid #cdd3c4}.grp .gaz{color:#a24e15;border-bottom:1px solid #cdd3c4}
-th{height:17px;padding:0 3px;font:500 7.5px/17px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;color:#4f584b;text-align:right;white-space:nowrap;overflow:hidden}
+th{height:22px;padding:0 3px;font:500 7.5px/9px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;color:#4f584b;text-align:right;white-space:nowrap;overflow:hidden}
 th.l{text-align:left}
 td{padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;font:400 9.5px "IBM Plex Mono",Consolas,monospace;border-top:1px solid #e3e7dc;box-sizing:border-box}
 td.l{text-align:left;font:400 10px "Source Sans 3","Segoe UI",Arial,sans-serif}
@@ -138,6 +145,9 @@ tr.v td.l b{font-weight:600}tr.v td.l b.lg{font-size:8.5px;letter-spacing:-.01em
 td.fz{color:#2e5935;font-weight:500}td.az{color:#a24e15;font-weight:500}
 td.mm,td.b{color:#4f584b}td.hi{color:#1c221b;font-weight:500}
 td.bar{text-align:left}
+td.sep,th.sep{border-left:1px solid #cdd3c4}
+th.sep{letter-spacing:0}
+td.b{font-size:8.5px;padding:0 2px}
 .scale{position:relative;display:inline-block;width:100%;height:6px;border-radius:3px;background:#f3f5ef;border:1px solid #cdd3c4;vertical-align:middle;box-sizing:border-box}
 .scale .r{position:absolute;top:1px;bottom:1px;border-radius:2px;background:#2e5935;opacity:.3}
 .scale .m{position:absolute;top:-2px;width:2px;height:8px;margin-left:-1px;background:#2e5935}
@@ -150,12 +160,14 @@ FUENTES = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?famil
 def fila(clase, primera, r, estilo=""):
     fz, az, bd = r["firmeza"], r["azucar"], r["bandas"]
     c = [f'<td class="l">{primera}</td>', f'<td>{r["fincas"]}</td>', f'<td>{r["albaranes"]}</td>',
-         f'<td>{entero(r["medidas"])}</td>']
+         f'<td class="sep">{entero(r["medidas"])}</td>']
     c += ([f'<td class="fz">{n(fz[0], 2)}</td>', f'<td class="mm">{n(fz[1])}–{n(fz[2])}</td>',
            f'<td class="bar">{escala(fz)}</td>'] if fz else ["<td>—</td>", "<td></td>", "<td></td>"])
+    na = r.get("muestras_azucar")
+    c += [f'<td class="sep">{entero(na) if na else "—"}</td>']
     c += ([f'<td class="az">{n(az[0])}</td>', f'<td class="mm">{n(az[1])}–{n(az[2])}</td>'] if az
           else ["<td>—</td>", "<td></td>"])
-    c += [f'<td class="b{" hi" if i == 3 else ""}">{pct(bd[i]) if bd else "—"}</td>' for i in range(4)]
+    c += [f'<td class="b{" hi" if i == 3 else ""}">{pct2(bd[i]) if bd else "—"}</td>' for i in range(4)]
     return f'<tr class="{clase}"{estilo}>{"".join(c)}</tr>'
 
 
@@ -174,11 +186,11 @@ def tabla_semana(s):
     # Anchos y altos en estilo en línea: el editor de Design no conserva <colgroup>
     total = sum(w for _, w, _ in COLUMNAS)
     ths = "".join(f'<th class="{c}" style="width:{w / total * 100:.2f}%">{t}</th>' for t, w, c in COLUMNAS)
-    p_fz = sum(w for _, w, _ in COLUMNAS[4:7]) / total * 100
-    p_az = sum(w for _, w, _ in COLUMNAS[7:]) / total * 100
+    p_fz = sum(COLUMNAS[i][1] for i in GRUPO_FZ) / total * 100
+    p_az = sum(COLUMNAS[i][1] for i in GRUPO_AZ) / total * 100
     banda = (f'<div class="grp"><span style="width:{100 - p_fz - p_az:.2f}%"></span>'
-             f'<span class="gfz" style="width:{p_fz:.2f}%">Firmeza · escala 1–5</span>'
-             f'<span class="gaz" style="width:{p_az:.2f}%">Azúcar °Brix · temporada</span></div>')
+             f'<span class="gfz" style="width:{p_fz:.2f}%">Firmeza · esta semana · escala 1–5</span>'
+             f'<span class="gaz" style="width:{p_az:.2f}%">Azúcar °Brix · toda la temporada de estas fincas</span></div>')
     cuerpo = "".join(cuerpo)
     return f'{banda}<table><thead><tr>{ths}</tr></thead><tbody>{cuerpo}</tbody></table>'
 
@@ -194,8 +206,8 @@ def pagina_semana(s):
     else:
         delta = '<span class="delta">&#160;</span>'
     bd, az = T["bandas"], T["azucar"]
-    bandas = "".join(f'<span><em>{l}</em>{pct(bd[i]) if bd else "—"}</span>'
-                     for i, l in enumerate(["&lt;9", "9–10", "10–12", "≥12"]))
+    bandas = "".join(f'<span><em>{l}</em>{pct2(bd[i]) if bd else "—"}</span>'
+                     for i, l in enumerate(["%&lt;9", "%9–10", "%10–12", "%≥12"]))
     cnt = "".join(f'<div><span class="lab">{k}</span><b>{v}</b></div>' for k, v in [
         ("Tipos", len(s["tipos"])), ("Variedades", s["variedades"]), ("Fincas", T["fincas"]),
         ("Albaranes", T["albaranes"]), ("Medidas firmeza", entero(T["medidas"]))])
@@ -203,7 +215,7 @@ def pagina_semana(s):
 <div class="sh-a"><div class="sh-t"><span class="sh-n">{s["etiqueta"]}</span><span class="sh-r">{corto(ini)} – {corto(fin)} {fin.year}<small>lunes {s["desde"]} · domingo {s["hasta"]}</small></span></div>
 <div class="cnt">{cnt}</div></div>
 <div class="kpi fz"><span class="lab">Firmeza media</span><span class="big">{n(T["firmeza"][0], 2)}<small>{n(T["firmeza"][1])}–{n(T["firmeza"][2])}</small></span>{escala(T["firmeza"])}{delta}</div>
-<div class="kpi az"><span class="lab">Brix medio <span class="tag">temporada</span></span><span class="big">{n(az[0]) if az else "—"}<small>{f"{n(az[1])}–{n(az[2])}" if az else ""}</small></span><div class="bandas">{bandas}</div></div>
+<div class="kpi az"><span class="lab">Brix medio <span class="tag">temporada</span></span><span class="big">{n(az[0]) if az else "—"}<small>{f"{n(az[1])}–{n(az[2])}" if az else ""}</small></span><span class="delta">{entero(T["muestras_azucar"]) if T["muestras_azucar"] else "—"} muestras de azúcar</span><div class="bandas">{bandas}</div></div>
 </div>'''
     return cab + tabla_semana(s)
 
@@ -240,8 +252,8 @@ medidas de firmeza, firmeza de esa semana y azúcar (°Brix) de temporada de esa
 <div class="cal">{"".join(celdas)}</div>
 <div class="leyenda">{leyenda}</div>
 <div class="notas">
-<p><b>Firmeza:</b> medidas de firmeza de esa semana, escala 1–5; la barra va del mínimo al máximo y la marca es la media. «Medidas» cuenta solo medidas de firmeza. Se excluyen 5 medidas fuera de escala (23, 27, 33, 41, 45: falta la coma).</p>
-<p><b>Azúcar:</b> el volcado no trae fecha para el azúcar: se da el de toda la temporada de esas fincas y variedad. Rangos calculados con los valores de °Brix uno a uno (el 12 exacto va en ≥12). No se da el nº de muestras de azúcar porque el volcado no lo trae.</p>
+<p><b>Firmeza:</b> medidas de firmeza de esa semana, escala 1–5; la barra va del mínimo al máximo y la marca es la media. «Nº medidas» = medidas de firmeza hechas esa semana (no es una media). Se excluyen 5 medidas fuera de escala (23, 27, 33, 41, 45: falta la coma).</p>
+<p><b>Azúcar:</b> el volcado no trae fecha para el azúcar: se da el de toda la temporada de esas fincas y variedad. «Nº muestras» = muestras de azúcar de la temporada de esas fincas: el ERP no lo da, se deduce de sus porcentajes (el menor nº con el que cada % sale de un nº entero de muestras; casi siempre 2 por cada medida de firmeza). Los rangos son % de esas muestras con dos decimales (sin el símbolo %): muestras de un rango = % × Nº muestras ÷ 100 (ej. 0,47 de 211 = 1 muestra). El 12 exacto va en ≥12.</p>
 <p><b>Filas de tipo</b> (sombreadas): totales del tipo esa semana. El detalle por finca está en el Excel «informe_escandallo_melon_2026.xlsx».</p>
 </div>'''
 
