@@ -132,24 +132,28 @@ def estadisticas(bloques):
     return az + fz
 
 
-# Rangos de azúcar tal como los clasifica el ERP (sección "VALORES DE AZUCAR").
-# Algunos bloques parten el >12 en "ENTRE 12 Y 14" y "MAYORES DE 14": se suman.
-BANDAS = [("<9", ["MENORES DE 9"]), ("9–10", ["ENTRE 9 Y 10"]), ("10–12", ["ENTRE 10 Y 12"]),
-          (">12", ["MAYORES DE 12", "ENTRE 12 Y 14", "MAYORES DE 14"])]
+# Rangos de azúcar, calculados con los valores de °Brix uno a uno ("VALORES DE AZUCAR V").
+# No se usa la sección de rangos del ERP ("VALORES DE AZUCAR") porque en 24 de 480
+# bloques contradice los propios valores (p. ej. 100 % "menores de 9" con valores de 14 a 16).
+# Como en el ERP, el 12 exacto va en el rango alto.
+BANDAS = [("<9", None, 9), ("9–10", 9, 10), ("10–12", 10, 12), ("≥12", 12, None)]
 
 
 def bandas_azucar(bloques):
-    """% de muestras de azúcar en cada rango del ERP, juntando bloques (cada uno
-    pesa según su nº de muestras estimado). None si no hay azúcar."""
+    """% de muestras de azúcar en cada rango, juntando bloques (cada uno pesa
+    según su nº de muestras estimado). None si no hay azúcar."""
     suma, n_total = [0.0] * len(BANDAS), 0
     for b in bloques:
-        if not b["rangos"]:
+        if not b["azucar"]:
             continue
         n = muestras_estimadas([p for _, p in b["azucar"]]) or 100
+        tot = sum(p for _, p in b["azucar"])
         n_total += n
-        for i, (_, claves) in enumerate(BANDAS):
-            suma[i] += sum(b["rangos"].get(k, 0) for k in claves) / 100 * n
+        for i, (_, lo, hi) in enumerate(BANDAS):
+            dentro = sum(p for v, p in b["azucar"] if (lo is None or v >= lo) and (hi is None or v < hi))
+            suma[i] += dentro / tot * n
     return [round(x / n_total, 4) for x in suma] if n_total else None
+
 
 # --- Excel -----------------------------------------------------------------
 FUENTE = "Arial"

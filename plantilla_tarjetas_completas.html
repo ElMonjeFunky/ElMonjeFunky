@@ -116,7 +116,7 @@ footer { color: var(--muted); font-size: 13.5px; max-width: 82ch; border-left: 3
   <header>
     <div class="eyebrow" id="eyebrow"></div>
     <h1>Escandallo semanal de melón</h1>
-    <p class="intro">Cada semana de lunes a domingo, con los melones que entraron por tipo y variedad. Firmeza: medidas de firmeza de esa semana, escala 1–5 (barra: mínimo a máximo, marca: media). Azúcar: Brix medio y % de muestras de azúcar en cada rango del ERP. "Medidas" cuenta solo medidas de firmeza. Pulsa una variedad para ver sus fincas.</p>
+    <p class="intro">Cada semana de lunes a domingo, con los melones que entraron por tipo y variedad. Firmeza: medidas de firmeza de esa semana, escala 1–5 (barra: mínimo a máximo, marca: media). Azúcar: Brix medio y % de muestras de azúcar en cada rango. "Medidas" cuenta solo medidas de firmeza. Pulsa una variedad para ver sus fincas.</p>
   </header>
   <main id="cards" style="display:grid;gap:26px"></main>
   <footer id="pie"></footer>
@@ -137,7 +137,7 @@ const TEMP = DATOS.azucar_temporada ? `<span class="tag" title="El volcado no tr
 
 document.getElementById("eyebrow").textContent = `Melón 2026 · ${DATOS.origen}`;
 document.getElementById("pie").textContent = DATOS.azucar_temporada
-  ? "Azúcar (°Brix): el volcado no trae fecha para el azúcar, así que se muestra la media, mínimo y máximo de toda la temporada de esas fincas y variedad, y el % de muestras en cada rango tal como los clasifica el ERP (<9, 9–10, 10–12, >12; en el ERP el valor 12 cuenta como «mayor de 12»). El número de muestras de azúcar no se muestra porque el volcado no lo da. Con un volcado por semana pasará a ser el azúcar de esa semana."
+  ? "Azúcar (°Brix): el volcado no trae fecha para el azúcar, así que se muestra la media, mínimo y máximo de toda la temporada de esas fincas y variedad, y el % de muestras de azúcar en cada rango (<9, 9–10, 10–12, 12 o más), calculado con los valores de °Brix uno a uno. La sección de rangos del ERP no se usa porque en algunos escandallos contradice los propios valores. El número de muestras de azúcar no se muestra porque el volcado no lo da. Con un volcado por semana pasará a ser el azúcar de esa semana."
   : "Azúcar (°Brix) de las muestras de esa semana.";
 
 const escala = f => f ? `<div class="scale" role="img" aria-label="Firmeza de ${n(f[1])} a ${n(f[2])}, media ${n(f[0], 2)}">
@@ -145,11 +145,11 @@ const escala = f => f ? `<div class="scale" role="img" aria-label="Firmeza de ${
 const fzCell = f => f ? `<div class="fz">${escala(f)}<span class="val">${n(f[0], 2)}<small>${n(f[1])}–${n(f[2])}</small></span></div>` : "—";
 const azCell = a => a ? `<span class="val">${n(a[0])}<small>${n(a[1])}–${n(a[2])}</small></span>` : "—";
 const pct = p => p == null ? "—" : Math.round(p * 100) + " %";
-const BANDAS = ["<9", "9–10", "10–12", ">12"];
+const BANDAS = ["<9", "9–10", "10–12", "≥12"];
 const barra = b => b ? `<div class="bands" role="img" aria-label="${BANDAS.map((l, i) => `${l}: ${pct(b[i])}`).join(", ")}">${
   b.map(x => `<i style="width:${(x * 100).toFixed(1)}%"></i>`).join("")}</div>` : "";
 const bandCells = b => BANDAS.map((_, i) => `<td class="b ${i === 3 ? "hi" : ""}">${b ? pct(b[i]) : "—"}</td>`).join("");
-const azCell2 = (a, b) => a ? `<div class="fz" style="grid-template-columns:auto 90px"><span class="val">${n(a[0])}<small>${n(a[1])}–${n(a[2])}</small></span>${barra(b)}</div>` : "—";
+const azCell2 = a => a ? `<span class="val">${n(a[0])}<small>${n(a[1])}–${n(a[2])}</small></span>` : "—";
 
 const cards = document.getElementById("cards");
 DATOS.semanas.forEach(s => {
@@ -178,8 +178,7 @@ DATOS.semanas.forEach(s => {
           <div class="big">${n(T.firmeza[0], 2)}<small>${n(T.firmeza[1])}–${n(T.firmeza[2])}</small></div>${escala(T.firmeza)}${delta}</div>
         <div class="kpi az"><div class="lab">Brix medio ${TEMP}</div>
           <div class="big">${n(T.azucar?.[0])}<small>${T.azucar ? n(T.azucar[1]) + "–" + n(T.azucar[2]) : ""}</small></div>
-          ${barra(T.bandas)}
-          <div class="blegend">${BANDAS.map((l, i) => `<span><i class="sw" style="background:var(--b${i})"></i>${l} <b>${T.bandas ? pct(T.bandas[i]) : "—"}</b></span>`).join("")}</div></div>
+          <div class="blegend">${BANDAS.map((l, i) => `<span>${l} <b>${T.bandas ? pct(T.bandas[i]) : "—"}</b></span>`).join("")}</div></div>
       </div>
     </div>
     <div class="body">${s.tipos.map(t => bloqueTipo(s.etiqueta, t)).join("")}</div>
@@ -193,22 +192,22 @@ function bloqueTipo(sem, t) {
       <div class="sub"><span><b>${t.variedades.length}</b> var.</span><span><b>${S.fincas}</b> fincas</span>
         <span>firmeza <b>${n(S.firmeza[0], 2)}</b> (${n(S.firmeza[1])}–${n(S.firmeza[2])})</span>
         <span>Brix medio <b>${n(S.azucar?.[0])}</b>${S.azucar ? ` (${n(S.azucar[1])}–${n(S.azucar[2])})` : ""}</span>
-        <span>&gt;12 °Brix <b>${S.bandas ? pct(S.bandas[3]) : "—"}</b></span></div></div>
+        <span>≥12 °Brix <b>${S.bandas ? pct(S.bandas[3]) : "—"}</b></span></div></div>
     <div class="scroll"><table>
       <thead><tr><th></th><th></th><th></th><th class="grp fz-grp" colspan="2">Firmeza</th><th class="grp az-grp" colspan="5">Azúcar ${TEMP}</th></tr>
         <tr><th>Variedad</th><th class="n">Fincas</th><th class="n">Albaranes</th><th class="n">Medidas</th>
-        <th>Media (1–5) · mín–máx</th><th>Brix medio · mín–máx</th><th class="n">&lt;9</th><th class="n">9–10</th><th class="n">10–12</th><th class="n">&gt;12</th></tr></thead>
+        <th>Media (1–5) · mín–máx</th><th>Brix medio · mín–máx</th><th class="n">&lt;9</th><th class="n">9–10</th><th class="n">10–12</th><th class="n">≥12</th></tr></thead>
       ${t.variedades.map((v, i) => {
         const id = `${sem}-${t.tipo.replace(/\W/g, "")}-${i}`;
         return `<tbody class="var-row"><tr>
           <td><button class="vbtn" type="button" aria-expanded="false" aria-controls="${id}" data-target="${id}">
             <span class="chev">›</span><span><span class="code">${esc(v.codigo)}</span>${v.nombre ? `<span class="vname">${esc(v.nombre)}</span>` : ""}</span></button></td>
           <td class="n">${v.fincas}</td><td class="n">${v.albaranes}</td><td class="n">${v.medidas}</td>
-          <td>${fzCell(v.firmeza)}</td><td class="az">${azCell2(v.azucar, v.bandas)}</td>${bandCells(v.bandas)}</tr></tbody>
+          <td>${fzCell(v.firmeza)}</td><td class="az">${azCell2(v.azucar)}</td>${bandCells(v.bandas)}</tr></tbody>
         <tbody id="${id}" hidden>${v.fincas_detalle.map(f => `<tr class="finca">
           <td>${esc(f.finca)} <span style="font-family:var(--mono);font-size:11.5px">${esc(f.cod)}</span>${f.cat ? `<span class="cat">${esc(f.cat)}</span>` : ""}</td>
           <td class="n"></td><td class="n">${f.albaranes}</td><td class="n">${f.medidas}</td>
-          <td>${fzCell(f.firmeza)}</td><td class="az">${azCell2(f.azucar, f.bandas)}</td>${bandCells(f.bandas)}</tr>`).join("")}</tbody>`;
+          <td>${fzCell(f.firmeza)}</td><td class="az">${azCell2(f.azucar)}</td>${bandCells(f.bandas)}</tr>`).join("")}</tbody>`;
       }).join("")}
     </table></div></section>`;
 }
