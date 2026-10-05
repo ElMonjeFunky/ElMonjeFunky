@@ -190,7 +190,7 @@ def tabla_semana(s):
     p_az = sum(COLUMNAS[i][1] for i in GRUPO_AZ) / total * 100
     banda = (f'<div class="grp"><span style="width:{100 - p_fz - p_az:.2f}%"></span>'
              f'<span class="gfz" style="width:{p_fz:.2f}%">Firmeza · esta semana · escala 1–5</span>'
-             f'<span class="gaz" style="width:{p_az:.2f}%">Azúcar °Brix · toda la temporada de estas fincas</span></div>')
+             f'<span class="gaz" style="width:{p_az:.2f}%">Azúcar °Brix</span></div>')
     cuerpo = "".join(cuerpo)
     return f'{banda}<table><thead><tr>{ths}</tr></thead><tbody>{cuerpo}</tbody></table>'
 
@@ -215,7 +215,7 @@ def pagina_semana(s):
 <div class="sh-a"><div class="sh-t"><span class="sh-n">{s["etiqueta"]}</span><span class="sh-r">{corto(ini)} – {corto(fin)} {fin.year}<small>lunes {s["desde"]} · domingo {s["hasta"]}</small></span></div>
 <div class="cnt">{cnt}</div></div>
 <div class="kpi fz"><span class="lab">Firmeza media</span><span class="big">{n(T["firmeza"][0], 2)}<small>{n(T["firmeza"][1])}–{n(T["firmeza"][2])}</small></span>{escala(T["firmeza"])}{delta}</div>
-<div class="kpi az"><span class="lab">Brix medio <span class="tag">temporada</span></span><span class="big">{n(az[0]) if az else "—"}<small>{f"{n(az[1])}–{n(az[2])}" if az else ""}</small></span><span class="delta">{entero(T["muestras_azucar"]) if T["muestras_azucar"] else "—"} muestras de azúcar</span><div class="bandas">{bandas}</div></div>
+<div class="kpi az"><span class="lab">Brix medio</span><span class="big">{n(az[0]) if az else "—"}<small>{f"{n(az[1])}–{n(az[2])}" if az else ""}</small></span><span class="delta">{entero(T["muestras_azucar"]) if T["muestras_azucar"] else "—"} muestras de azúcar</span><div class="bandas">{bandas}</div></div>
 </div>'''
     return cab + tabla_semana(s)
 
