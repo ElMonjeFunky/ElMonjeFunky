@@ -15,11 +15,13 @@ from collections import defaultdict
 from pathlib import Path
 from statistics import mean
 
-from escandallo import AQUI, cargar_variedades, estadisticas, leer_bloques, tipo_y_categoria
+from escandallo import AQUI, bandas_azucar, cargar_variedades, estadisticas, leer_bloques, tipo_y_categoria
 
 
 def resumen(items):
-    """items: [(bloque, medidas de la semana)] -> cifras de la semana."""
+    """items: [(bloque, medidas de la semana)] -> cifras de la semana.
+    'medidas' son solo medidas de firmeza; las de azúcar no se cuentan porque
+    el volcado no da su número exacto."""
     valores = [v for _, med in items for _, _, v in med]
     az = estadisticas([b for b, _ in items])
     return {
@@ -28,7 +30,7 @@ def resumen(items):
         "medidas": len(valores),
         "firmeza": [round(mean(valores), 2), min(valores), max(valores)] if valores else None,
         "azucar": az[:3] if az[0] is not None else None,
-        "mayor12": az[4],
+        "bandas": bandas_azucar([b for b, _ in items]),
     }
 
 

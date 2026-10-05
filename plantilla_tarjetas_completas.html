@@ -8,6 +8,7 @@
   --rind: #2e5935; --rind-soft: #e3ecdc; --flesh: #c9671f; --flesh-soft: #fbe8d6; --up: #2e7d4f; --down: #b5482c;
   --t-amarillo: #d9a400; --t-cantaloupe: #e07b2a; --t-charentais: #c9572f; --t-galia: #6f9e2b; --t-glv: #2f8a6c;
   --t-ivory: #a39470; --t-orange: #e0614a; --t-sapo: #2f5a36; --t-sunup: #b8862a; --t-otro: #7a8075;
+  --b0: #b9bfb2; --b1: #f3d3b0; --b2: #e9a564; --b3: #c9671f;
   --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -16,12 +17,12 @@
   --bg: #121611; --surface: #1a1f18; --ink: #e6eae1; --muted: #9aa393; --line: #2c3328; --empty: #161a14;
   --rind: #94c58a; --rind-soft: #222d1e; --flesh: #f0a15e; --flesh-soft: #3a2a1c; --up: #7fcf9b; --down: #f08a6e;
   --t-amarillo: #f2c84b; --t-cantaloupe: #f39b56; --t-charentais: #ec8462; --t-galia: #a6cf63; --t-glv: #5fc4a0;
-  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; color-scheme: dark; } }
+  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; --b0: #4a5246; --b1: #6b4a2c; --b2: #b0703a; --b3: #f0a15e; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #121611; --surface: #1a1f18; --ink: #e6eae1; --muted: #9aa393; --line: #2c3328; --empty: #161a14;
   --rind: #94c58a; --rind-soft: #222d1e; --flesh: #f0a15e; --flesh-soft: #3a2a1c; --up: #7fcf9b; --down: #f08a6e;
   --t-amarillo: #f2c84b; --t-cantaloupe: #f39b56; --t-charentais: #ec8462; --t-galia: #a6cf63; --t-glv: #5fc4a0;
-  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; color-scheme: dark; }
+  --t-ivory: #cfc2a0; --t-orange: #f48b77; --t-sapo: #82b57a; --t-sunup: #e0b45c; --t-otro: #a3a99d; --b0: #4a5246; --b1: #6b4a2c; --b2: #b0703a; --b3: #f0a15e; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
@@ -67,7 +68,7 @@ h1 { margin: 0; font: 800 clamp(28px, 4.6vw, 46px)/1.04 var(--display); color: v
 .tipo-head .sub { font: 400 12.5px var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .tipo-head .sub b { color: var(--ink); font-weight: 500; }
 .scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 880px; }
+table { width: 100%; border-collapse: collapse; min-width: 1060px; }
 th { text-align: left; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 6px; white-space: nowrap; }
 th.n, td.n { text-align: right; }
 td { padding: 7px 8px; border-top: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
@@ -92,6 +93,20 @@ tr.finca .cat { font: 500 10px var(--mono); padding: 0 5px; border-radius: 3px; 
 .val small { color: var(--muted); font-weight: 400; margin-left: 4px; }
 .az .val { color: var(--ink); }
 .kpi .scale { margin-top: 4px; }
+/* Rangos de azúcar del ERP: barra apilada */
+.bands { display: flex; height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); min-width: 90px; }
+.bands i { display: block; height: 100%; }
+.bands i:nth-child(1) { background: var(--b0); } .bands i:nth-child(2) { background: var(--b1); }
+.bands i:nth-child(3) { background: var(--b2); } .bands i:nth-child(4) { background: var(--b3); }
+.kpi .bands { height: 12px; margin-top: 6px; }
+.blegend { display: grid; grid-template-columns: repeat(4, auto); gap: 2px 12px; font: 400 11.5px var(--mono); color: var(--muted); margin-top: 4px; }
+.blegend span { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.blegend b { color: var(--ink); font-weight: 500; }
+.sw { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+td.b { text-align: right; font: 400 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
+td.b.hi { color: var(--ink); font-weight: 500; }
+th.grp { text-align: center; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+th.fz-grp { color: var(--rind); } th.az-grp { color: var(--flesh); }
 
 footer { color: var(--muted); font-size: 13.5px; max-width: 82ch; border-left: 3px solid var(--flesh); padding-left: 12px; }
 @media (prefers-reduced-motion: reduce) { .vbtn .chev { transition: none; } }
@@ -101,7 +116,7 @@ footer { color: var(--muted); font-size: 13.5px; max-width: 82ch; border-left: 3
   <header>
     <div class="eyebrow" id="eyebrow"></div>
     <h1>Escandallo semanal de melón</h1>
-    <p class="intro">Cada semana de lunes a domingo, con los melones que entraron por tipo y variedad. Firmeza de las medidas de esa semana en escala 1–5 (barra: mínimo a máximo, marca: media). Pulsa una variedad para ver sus fincas.</p>
+    <p class="intro">Cada semana de lunes a domingo, con los melones que entraron por tipo y variedad. Firmeza: medidas de firmeza de esa semana, escala 1–5 (barra: mínimo a máximo, marca: media). Azúcar: Brix medio y % de muestras de azúcar en cada rango del ERP. "Medidas" cuenta solo medidas de firmeza. Pulsa una variedad para ver sus fincas.</p>
   </header>
   <main id="cards" style="display:grid;gap:26px"></main>
   <footer id="pie"></footer>
@@ -122,7 +137,7 @@ const TEMP = DATOS.azucar_temporada ? `<span class="tag" title="El volcado no tr
 
 document.getElementById("eyebrow").textContent = `Melón 2026 · ${DATOS.origen}`;
 document.getElementById("pie").textContent = DATOS.azucar_temporada
-  ? "Azúcar (°Brix): el volcado no trae fecha para el azúcar, así que se muestra la media, mínimo y máximo de toda la temporada de esas fincas y variedad, y el % de muestras con 12 °Brix o más. Con un volcado por semana pasará a ser el azúcar de esa semana."
+  ? "Azúcar (°Brix): el volcado no trae fecha para el azúcar, así que se muestra la media, mínimo y máximo de toda la temporada de esas fincas y variedad, y el % de muestras en cada rango tal como los clasifica el ERP (<9, 9–10, 10–12, >12; en el ERP el valor 12 cuenta como «mayor de 12»). El número de muestras de azúcar no se muestra porque el volcado no lo da. Con un volcado por semana pasará a ser el azúcar de esa semana."
   : "Azúcar (°Brix) de las muestras de esa semana.";
 
 const escala = f => f ? `<div class="scale" role="img" aria-label="Firmeza de ${n(f[1])} a ${n(f[2])}, media ${n(f[0], 2)}">
@@ -130,6 +145,11 @@ const escala = f => f ? `<div class="scale" role="img" aria-label="Firmeza de ${
 const fzCell = f => f ? `<div class="fz">${escala(f)}<span class="val">${n(f[0], 2)}<small>${n(f[1])}–${n(f[2])}</small></span></div>` : "—";
 const azCell = a => a ? `<span class="val">${n(a[0])}<small>${n(a[1])}–${n(a[2])}</small></span>` : "—";
 const pct = p => p == null ? "—" : Math.round(p * 100) + " %";
+const BANDAS = ["<9", "9–10", "10–12", ">12"];
+const barra = b => b ? `<div class="bands" role="img" aria-label="${BANDAS.map((l, i) => `${l}: ${pct(b[i])}`).join(", ")}">${
+  b.map(x => `<i style="width:${(x * 100).toFixed(1)}%"></i>`).join("")}</div>` : "";
+const bandCells = b => BANDAS.map((_, i) => `<td class="b ${i === 3 ? "hi" : ""}">${b ? pct(b[i]) : "—"}</td>`).join("");
+const azCell2 = (a, b) => a ? `<div class="fz" style="grid-template-columns:auto 90px"><span class="val">${n(a[0])}<small>${n(a[1])}–${n(a[2])}</small></span>${barra(b)}</div>` : "—";
 
 const cards = document.getElementById("cards");
 DATOS.semanas.forEach(s => {
@@ -152,13 +172,14 @@ DATOS.semanas.forEach(s => {
         <dl class="counts">
           <div><dt>Tipos</dt><dd>${s.tipos.length}</dd></div><div><dt>Variedades</dt><dd>${s.variedades}</dd></div>
           <div><dt>Fincas</dt><dd>${T.fincas}</dd></div><div><dt>Albaranes</dt><dd>${T.albaranes}</dd></div>
-          <div><dt>Medidas firmeza</dt><dd>${T.medidas.toLocaleString("es-ES")}</dd></div></dl></div>
+          <div><dt>Medidas de firmeza</dt><dd>${T.medidas.toLocaleString("es-ES")}</dd></div></dl></div>
       <div class="kpis">
         <div class="kpi fz"><div class="lab">Firmeza media (1–5)</div>
           <div class="big">${n(T.firmeza[0], 2)}<small>${n(T.firmeza[1])}–${n(T.firmeza[2])}</small></div>${escala(T.firmeza)}${delta}</div>
-        <div class="kpi az"><div class="lab">Azúcar media °Brix ${TEMP}</div>
+        <div class="kpi az"><div class="lab">Brix medio ${TEMP}</div>
           <div class="big">${n(T.azucar?.[0])}<small>${T.azucar ? n(T.azucar[1]) + "–" + n(T.azucar[2]) : ""}</small></div>
-          <div class="delta" style="color:var(--muted)">${pct(T.mayor12)} de muestras ≥ 12 °Brix</div></div>
+          ${barra(T.bandas)}
+          <div class="blegend">${BANDAS.map((l, i) => `<span><i class="sw" style="background:var(--b${i})"></i>${l} <b>${T.bandas ? pct(T.bandas[i]) : "—"}</b></span>`).join("")}</div></div>
       </div>
     </div>
     <div class="body">${s.tipos.map(t => bloqueTipo(s.etiqueta, t)).join("")}</div>
@@ -171,21 +192,23 @@ function bloqueTipo(sem, t) {
     <div class="tipo-head"><h3><span class="dot"></span>${esc(t.tipo)}</h3>
       <div class="sub"><span><b>${t.variedades.length}</b> var.</span><span><b>${S.fincas}</b> fincas</span>
         <span>firmeza <b>${n(S.firmeza[0], 2)}</b> (${n(S.firmeza[1])}–${n(S.firmeza[2])})</span>
-        <span>azúcar <b>${n(S.azucar?.[0])}</b>${S.azucar ? ` (${n(S.azucar[1])}–${n(S.azucar[2])})` : ""}</span></div></div>
+        <span>Brix medio <b>${n(S.azucar?.[0])}</b>${S.azucar ? ` (${n(S.azucar[1])}–${n(S.azucar[2])})` : ""}</span>
+        <span>&gt;12 °Brix <b>${S.bandas ? pct(S.bandas[3]) : "—"}</b></span></div></div>
     <div class="scroll"><table>
-      <thead><tr><th>Variedad</th><th class="n">Fincas</th><th class="n">Albaranes</th><th class="n">Medidas</th>
-        <th>Firmeza (1–5)</th><th>Azúcar °Brix</th><th class="n">≥ 12 °Brix</th></tr></thead>
+      <thead><tr><th></th><th></th><th></th><th class="grp fz-grp" colspan="2">Firmeza</th><th class="grp az-grp" colspan="5">Azúcar ${TEMP}</th></tr>
+        <tr><th>Variedad</th><th class="n">Fincas</th><th class="n">Albaranes</th><th class="n">Medidas</th>
+        <th>Media (1–5) · mín–máx</th><th>Brix medio · mín–máx</th><th class="n">&lt;9</th><th class="n">9–10</th><th class="n">10–12</th><th class="n">&gt;12</th></tr></thead>
       ${t.variedades.map((v, i) => {
         const id = `${sem}-${t.tipo.replace(/\W/g, "")}-${i}`;
         return `<tbody class="var-row"><tr>
           <td><button class="vbtn" type="button" aria-expanded="false" aria-controls="${id}" data-target="${id}">
             <span class="chev">›</span><span><span class="code">${esc(v.codigo)}</span>${v.nombre ? `<span class="vname">${esc(v.nombre)}</span>` : ""}</span></button></td>
           <td class="n">${v.fincas}</td><td class="n">${v.albaranes}</td><td class="n">${v.medidas}</td>
-          <td>${fzCell(v.firmeza)}</td><td class="az">${azCell(v.azucar)}</td><td class="n">${pct(v.mayor12)}</td></tr></tbody>
+          <td>${fzCell(v.firmeza)}</td><td class="az">${azCell2(v.azucar, v.bandas)}</td>${bandCells(v.bandas)}</tr></tbody>
         <tbody id="${id}" hidden>${v.fincas_detalle.map(f => `<tr class="finca">
           <td>${esc(f.finca)} <span style="font-family:var(--mono);font-size:11.5px">${esc(f.cod)}</span>${f.cat ? `<span class="cat">${esc(f.cat)}</span>` : ""}</td>
           <td class="n"></td><td class="n">${f.albaranes}</td><td class="n">${f.medidas}</td>
-          <td>${fzCell(f.firmeza)}</td><td class="az">${azCell(f.azucar)}</td><td class="n">${pct(f.mayor12)}</td></tr>`).join("")}</tbody>`;
+          <td>${fzCell(f.firmeza)}</td><td class="az">${azCell2(f.azucar, f.bandas)}</td>${bandCells(f.bandas)}</tr>`).join("")}</tbody>`;
       }).join("")}
     </table></div></section>`;
 }
