@@ -64,7 +64,7 @@ td.num{color:#8a9184;font-size:8.5px}
 td.sep{border-left:1px solid #cdd3c4}
 td.lista{text-align:left;font:400 8.6px "Source Sans 3","Segoe UI",Arial,sans-serif}
 td.lista b{font:600 8.5px "IBM Plex Mono",Consolas,monospace}
-td.lista.m b{color:#a3361c}td.lista.m b.bajo{color:#7d847a;font-weight:500}td.lista.n b{color:#8a6a12}
+td.lista.m b{color:#a3361c}td.lista b.bajo{color:#7d847a;font-weight:500}td.lista.n b{color:#8a6a12}
 td.lista.largo{font-size:8px;letter-spacing:-.02em}td.lista.largo b{font-size:7.6px}
 td.lista.largo4{font-size:7.3px;letter-spacing:-.03em}td.lista.largo4 b{font-size:7px}
 td.l.largo{font-size:8.6px;letter-spacing:-.02em}
@@ -146,7 +146,7 @@ ABREVIATURAS = {
 LEYENDA = ("peq. = pequeño · gr. = grande · trat. = tratamiento · desp. = desprendida · Princ. = principio · "
            "Pedúnc. = pedúnculo · Escrit. = escriturado · Def. = defecto · extr. = extraños")
 
-SUMA_MAYORES_MIN3 = 7.5   # si la suma de mayores pasa de esto, salen al menos los 3 más abundantes
+MINIMO = 3   # en cada casilla salen al menos los 3 problemas más abundantes, lleguen o no al umbral
 
 
 def lista(problemas, umbral, clase, minimo=0):
@@ -181,14 +181,14 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
     col = COLOR.get(tipo, "#6b7466")
     filas = [f'<tr class="t" style="height:{alto}px;--c:{col}"><td class="num"></td><td class="l">Media del tipo</td><td class="sem">{semanas_txt(todos)}</td>'
              f'<td>{miles(melones)}</td>'
-             + lista(M["mayores"], umb_may, "m", 3 if sm > SUMA_MAYORES_MIN3 else 0) + f'<td class="vm">{pc(sm)}</td>'
-             + lista(M["menores"], umb_men, "n") + f'<td class="vn">{pc(sn)}</td></tr>']
+             + lista(M["mayores"], umb_may, "m", MINIMO) + f'<td class="vm">{pc(sm)}</td>'
+             + lista(M["menores"], umb_men, "n", MINIMO) + f'<td class="vn">{pc(sn)}</td></tr>']
     for i, (finca, bs, m, fm, fn) in enumerate(filas_datos, start=1):
         mel = sum(len(b["firmeza"]) for b in bs)
         filas.append(f'<tr style="height:{alto}px"><td class="num">{i}</td><td class="l{" largo" if len(finca) > 20 else ""}">{e(finca)}</td><td class="sem">{semanas_txt(bs)}</td>'
                      f'<td>{miles(mel)}</td>'
-                     + lista(m["mayores"], umb_may, "m", 3 if fm > SUMA_MAYORES_MIN3 else 0) + f'<td class="vm">{pc(fm)}</td>'
-                     + lista(m["menores"], umb_men, "n") + f'<td class="vn">{pc(fn)}</td></tr>')
+                     + lista(m["mayores"], umb_may, "m", MINIMO) + f'<td class="vm">{pc(fm)}</td>'
+                     + lista(m["menores"], umb_men, "n", MINIMO) + f'<td class="vn">{pc(fn)}</td></tr>')
     cols = [("#", 2.3, ""), ("Finca", 15.5, "l"), ("Semanas", 14.5, "l"), ("Mel.", 5.2, ""),
             (f"% · desde {umb_may}% · de más a menos", 27.5, "l"), ("Suma %", 4.5, ""),
             (f"% · desde {umb_men}% · de más a menos", 26, "l"), ("Suma %", 4.5, "")]
@@ -207,8 +207,8 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
 <div class="kpi may"><span class="lab">Suma problemas mayores</span><b>{pc(sm, 2)}%</b><small>El que más: {e(top_m)}</small></div>
 <div class="kpi men"><span class="lab">Suma problemas menores</span><b>{pc(sn, 2)}%</b><small>El que más: {e(top_n)}</small></div>
 </div>{banda}<table><thead><tr>{ths}</tr></thead><tbody>{"".join(filas)}</tbody></table>
-<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada fila salen, con su %, los problemas mayores de {umb_may}% o más y los menores de {umb_men}% o más.
-Si la suma de mayores pasa de {pc(SUMA_MAYORES_MIN3)}%, salen al menos los 3 mayores más abundantes; los que no llegan al {umb_may}% van con el número en gris. Abreviaturas: {LEYENDA}.
+<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada casilla salen, con su %, al menos los {MINIMO} problemas más abundantes, más cualquier otro que llegue al {umb_may}% (mayores) o al {umb_men}% (menores);
+los que no llegan a ese umbral van con el número en gris. Abreviaturas: {LEYENDA}.
 <b>Suma</b> = todos los problemas de esa clase, salgan o no en la lista. % de toda la temporada (el volcado no trae fecha de los problemas).
 Si una finca tiene varias variedades, cada escandallo pesa según sus melones medidos. <b>Semanas</b> = semanas con escandallo (S32-34 = de la 32 a la 34). <b>Mel.</b> = melones medidos (medidas de firmeza).</p>'''.replace(f"{melones:,}", f"{melones:,}".replace(",", "."))
     return (f'<div class="pg"><div class="cuerpo">{cuerpo}</div><div class="pie"><span>{TITULO} · <b>{e(tipo.title())}</b></span>'
