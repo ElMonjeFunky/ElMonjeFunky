@@ -74,7 +74,7 @@ def leer_bloques(ruta):
     for fila in csv.reader(lineas, delimiter=";"):
         f = [c.strip() for c in fila] + [""] * 10
         if f[0] == "PRODUCTO" and f[1] == "VARIEDAD":
-            b = {"azucar": [], "firmeza": [], "rangos": {}, "revisar": []}
+            b = {"azucar": [], "firmeza": [], "rangos": {}, "revisar": [], "mayores": {}, "menores": {}}
             bloques.append(b)
             seccion = "cabecera"
             continue
@@ -88,7 +88,11 @@ def leer_bloques(ruta):
             seccion = "azucar_v"
         elif f[0].startswith("VALORES DE AZUCAR"):
             seccion = "azucar"
-        elif f[0].startswith(("VALORES DE COLOR", "PROBLEMAS")):
+        elif f[0].startswith("PROBLEMAS MAYORES"):
+            seccion = "mayores"
+        elif f[0].startswith("PROBLEMAS MENORES"):
+            seccion = "menores"
+        elif f[0].startswith("VALORES DE COLOR"):
             seccion = "otro"
         elif f[0].startswith("VALORES DE FIRMEZA"):
             seccion = "firmeza"
@@ -106,7 +110,17 @@ def leer_bloques(ruta):
             b["azucar"].append((num(f[1]), num(f[2])))
         elif seccion == "azucar":
             b["rangos"][re.sub(r"\s+", " ", f[1])] = num(f[2])
+        elif seccion in ("mayores", "menores") and f[2]:
+            # el mismo problema viene a veces con dos códigos (PODRIDO PEQUEÑO 115 y 852): se agrupa por nombre
+            nombre = nombre_problema(f[1])
+            b[seccion][nombre] = b[seccion].get(nombre, 0) + num(f[2])
     return bloques
+
+
+def nombre_problema(texto):
+    """Nombre limpio del problema: sin el '·' final y sin tildes en PEDÚNCULO."""
+    t = re.sub(r"\s+", " ", texto.replace("·", "")).strip().upper()
+    return t.replace("PEDÚNCULO", "PEDUNCULO")
 
 
 def cargar_variedades(ruta):
