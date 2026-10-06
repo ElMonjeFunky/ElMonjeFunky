@@ -64,10 +64,10 @@ td.num{color:#8a9184;font-size:8.5px}
 td.sep{border-left:1px solid #cdd3c4}
 td.lista{text-align:left;font:400 8.6px "Source Sans 3","Segoe UI",Arial,sans-serif}
 td.lista b{font:600 8.5px "IBM Plex Mono",Consolas,monospace}
-td.lista.m b{color:#a3361c}td.lista.n b{color:#8a6a12}
+td.lista.m b{color:#a3361c}td.lista.m b.bajo{color:#7d847a;font-weight:500}td.lista.n b{color:#8a6a12}
 td.lista.largo{font-size:8px;letter-spacing:-.02em}td.lista.largo b{font-size:7.6px}
 td.lista.largo4{font-size:7.3px;letter-spacing:-.03em}td.lista.largo4 b{font-size:7px}
-td.l.largo{font-size:9px;letter-spacing:-.02em}
+td.l.largo{font-size:8.6px;letter-spacing:-.02em}
 td.sem{text-align:left;font:400 9.5px "Source Sans 3","Segoe UI",Arial,sans-serif;color:#4f584b}
 td.lista em{font-style:normal;color:#a7ad9f}
 td.vm{color:#a3361c;font-weight:500}td.vn{color:#8a6a12;font-weight:500}
@@ -79,14 +79,21 @@ tr.t td.l{font:700 9.5px "IBM Plex Mono",Consolas,monospace;letter-spacing:.05em
 
 
 AJUSTE = """<script>
-// Si un texto no cabe en su celda, baja la letra de esa celda poco a poco (mínimo 6,5 px)
-document.querySelectorAll("td.lista, td.sem, td.l").forEach(function (td) {
-  var t = 0, tam = parseFloat(getComputedStyle(td).fontSize);
-  while (td.scrollWidth > td.clientWidth + 0.5 && tam > 6.5 && t++ < 40) {
-    tam -= 0.2; td.style.fontSize = tam + "px";
-    td.querySelectorAll("b").forEach(function (b) { b.style.fontSize = (tam - 0.4) + "px"; });
-  }
-});
+// Si un texto no cabe en su celda (con 3 px de margen, porque al imprimir el ancho varía algo),
+// baja la letra de esa celda poco a poco, sin pasar de 6,5 px.
+function ancho(td) { var r = document.createRange(); r.selectNodeContents(td); return r.getBoundingClientRect().width; }
+function ajustar() {
+  document.querySelectorAll("td.lista, td.sem, td.l").forEach(function (td) {
+    var cs = getComputedStyle(td), t = 0, tam = parseFloat(cs.fontSize);
+    var hueco = td.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 3;
+    while (ancho(td) > hueco && tam > 6.5 && t++ < 40) {
+      tam -= 0.2; td.style.fontSize = tam + "px";
+      td.querySelectorAll("b").forEach(function (b) { b.style.fontSize = (tam - 0.4) + "px"; });
+    }
+  });
+}
+ajustar();
+if (document.fonts) document.fonts.ready.then(ajustar);   // otra vez cuando estén cargadas las fuentes
 </script>"""
 
 
@@ -129,12 +136,31 @@ def semanas_txt(bloques):
     return tramos[0] if len(tramos) == 1 else ", ".join(tramos[:-1]) + " y " + tramos[-1]
 
 
-def lista(problemas, umbral, clase):
-    sel = [(p, v) for p, v in problemas if v >= umbral]
+# Nombres largos abreviados dentro de las listas (leyenda al pie de cada página)
+ABREVIATURAS = {
+    "PODRIDO PEQUEÑO": "Podrido peq.", "PODRIDO GRANDE": "Podrido gr.", "MANCHAS TRATAMIENTO": "Manchas trat.",
+    "SEMILLA DESPRENDIDA": "Semilla desp.", "PRINCIPIO DE AVINADO": "Princ. avinado",
+    "PEDUNCULO AGRIETADO": "Pedúnc. agrietado", "ESCRITURADO CAIDO": "Escrit. caído", "MAL ESCRITURADO": "Mal escrit.",
+    "DEFECTO DE COLOR": "Def. color", "CUERPOS EXTRAÑOS": "Cuerpos extr.", "DAÑO POR PIEDRA": "Daño piedra",
+}
+LEYENDA = ("peq. = pequeño · gr. = grande · trat. = tratamiento · desp. = desprendida · Princ. = principio · "
+           "Pedúnc. = pedúnculo · Escrit. = escriturado · Def. = defecto · extr. = extraños")
+
+SUMA_MAYORES_MIN3 = 7.5   # si la suma de mayores pasa de esto, salen al menos los 3 más abundantes
+
+
+def lista(problemas, umbral, clase, minimo=0):
+    """Problemas desde el umbral; con minimo=3 salen además los 3 más abundantes
+    aunque no lleguen (esos van en gris para distinguirlos)."""
+    sel = [(p, v) for i, (p, v) in enumerate(problemas) if v > 0 and (v >= umbral or i < minimo)]
     if not sel:
         return f'<td class="lista {clase} sep"><em>—</em></td>'
     # el % va en la cabecera; los valores redondos sin ",0" (10 en vez de 10,0) para ahorrar sitio
-    txt = " · ".join(f"<b>{pc(v).removesuffix(',0')}</b> {e(p.capitalize())}" for p, v in sel)
+    partes = []
+    for p, v in sel:
+        cls = "" if v >= umbral else ' class="bajo"'
+        partes.append(f"<b{cls}>{pc(v).removesuffix(',0')}</b> {e(ABREVIATURAS.get(p, p.capitalize()))}")
+    txt = " · ".join(partes)
     # con 3 o más problemas, letra algo más pequeña para que quepa en la fila
     largo = " largo4" if len(sel) >= 4 else (" largo" if len(sel) == 3 else "")
     return f'<td class="lista {clase} sep{largo}">{txt}</td>'
@@ -155,17 +181,17 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
     col = COLOR.get(tipo, "#6b7466")
     filas = [f'<tr class="t" style="height:{alto}px;--c:{col}"><td class="num"></td><td class="l">Media del tipo</td><td class="sem">{semanas_txt(todos)}</td>'
              f'<td>{miles(melones)}</td>'
-             + lista(M["mayores"], umb_may, "m") + f'<td class="vm">{pc(sm)}</td>'
+             + lista(M["mayores"], umb_may, "m", 3 if sm > SUMA_MAYORES_MIN3 else 0) + f'<td class="vm">{pc(sm)}</td>'
              + lista(M["menores"], umb_men, "n") + f'<td class="vn">{pc(sn)}</td></tr>']
     for i, (finca, bs, m, fm, fn) in enumerate(filas_datos, start=1):
         mel = sum(len(b["firmeza"]) for b in bs)
-        filas.append(f'<tr style="height:{alto}px"><td class="num">{i}</td><td class="l{" largo" if len(finca) > 24 else ""}">{e(finca)}</td><td class="sem">{semanas_txt(bs)}</td>'
+        filas.append(f'<tr style="height:{alto}px"><td class="num">{i}</td><td class="l{" largo" if len(finca) > 20 else ""}">{e(finca)}</td><td class="sem">{semanas_txt(bs)}</td>'
                      f'<td>{miles(mel)}</td>'
-                     + lista(m["mayores"], umb_may, "m") + f'<td class="vm">{pc(fm)}</td>'
+                     + lista(m["mayores"], umb_may, "m", 3 if fm > SUMA_MAYORES_MIN3 else 0) + f'<td class="vm">{pc(fm)}</td>'
                      + lista(m["menores"], umb_men, "n") + f'<td class="vn">{pc(fn)}</td></tr>')
     cols = [("#", 2.3, ""), ("Finca", 15.5, "l"), ("Semanas", 14.5, "l"), ("Mel.", 5.2, ""),
-            (f"% · desde {umb_may}% · de más a menos", 26, "l"), ("Suma %", 4.5, ""),
-            (f"% · desde {umb_men}% · de más a menos", 27.5, "l"), ("Suma %", 4.5, "")]
+            (f"% · desde {umb_may}% · de más a menos", 27.5, "l"), ("Suma %", 4.5, ""),
+            (f"% · desde {umb_men}% · de más a menos", 26, "l"), ("Suma %", 4.5, "")]
     ths = "".join(f'<th class="{c}" style="width:{w}%">{t}</th>' for t, w, c in cols)
     ancho_m = cols[4][1] + cols[5][1]
     ancho_n = cols[6][1] + cols[7][1]
@@ -181,7 +207,8 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
 <div class="kpi may"><span class="lab">Suma problemas mayores</span><b>{pc(sm, 2)}%</b><small>El que más: {e(top_m)}</small></div>
 <div class="kpi men"><span class="lab">Suma problemas menores</span><b>{pc(sn, 2)}%</b><small>El que más: {e(top_n)}</small></div>
 </div>{banda}<table><thead><tr>{ths}</tr></thead><tbody>{"".join(filas)}</tbody></table>
-<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada fila salen, con su %, los problemas mayores de {umb_may}% o más y los menores de {umb_men}% o más;
+<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada fila salen, con su %, los problemas mayores de {umb_may}% o más y los menores de {umb_men}% o más.
+Si la suma de mayores pasa de {pc(SUMA_MAYORES_MIN3)}%, salen al menos los 3 mayores más abundantes; los que no llegan al {umb_may}% van con el número en gris. Abreviaturas: {LEYENDA}.
 <b>Suma</b> = todos los problemas de esa clase, salgan o no en la lista. % de toda la temporada (el volcado no trae fecha de los problemas).
 Si una finca tiene varias variedades, cada escandallo pesa según sus melones medidos. <b>Semanas</b> = semanas con escandallo (S32-34 = de la 32 a la 34). <b>Mel.</b> = melones medidos (medidas de firmeza).</p>'''.replace(f"{melones:,}", f"{melones:,}".replace(",", "."))
     return (f'<div class="pg"><div class="cuerpo">{cuerpo}</div><div class="pie"><span>{TITULO} · <b>{e(tipo.title())}</b></span>'
