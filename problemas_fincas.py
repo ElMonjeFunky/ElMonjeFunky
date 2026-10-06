@@ -4,7 +4,7 @@ fila por finca (todas sus variedades juntas) con los problemas mayores y menores
 que pasan el umbral, y la suma de todos.
 
 Uso:
-    python3 problemas_fincas.py VOLCADO.csv [--mayores 5] [--menores 10]
+    python3 problemas_fincas.py VOLCADO.csv [--mayores 4] [--menores 7]
                                 [--salida "Problemas por finca 2026"]
 
 Nombre de finca: columna nombre_final de fincas_nombres.csv (con los asociados GGN ya
@@ -16,6 +16,7 @@ firmeza; mínimo 1) y un problema que no aparece cuenta como 0 %.
 import argparse
 import csv
 import html
+import json
 import os
 import subprocess
 from collections import defaultdict
@@ -57,14 +58,17 @@ table{width:100%;border-collapse:collapse;table-layout:fixed}
 th{height:20px;padding:0 4px;font:500 7.5px "IBM Plex Mono",Consolas,monospace;letter-spacing:.04em;text-transform:uppercase;color:#4f584b;text-align:right;white-space:nowrap;overflow:hidden}
 th.l{text-align:left}
 th{letter-spacing:0;padding:0 3px}
-td{padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;font:400 9.5px "IBM Plex Mono",Consolas,monospace;border-top:1px solid #e3e7dc}
+td{padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;font:400 9.5px "IBM Plex Mono",Consolas,monospace;border-top:1px solid #e3e7dc}
 td.l{text-align:left;font:600 10px "Source Sans 3","Segoe UI",Arial,sans-serif}
 td.num{color:#8a9184;font-size:8.5px}
 td.sep{border-left:1px solid #cdd3c4}
-td.lista{text-align:left;font:400 9px "Source Sans 3","Segoe UI",Arial,sans-serif}
+td.lista{text-align:left;font:400 8.6px "Source Sans 3","Segoe UI",Arial,sans-serif}
 td.lista b{font:600 8.5px "IBM Plex Mono",Consolas,monospace}
 td.lista.m b{color:#a3361c}td.lista.n b{color:#8a6a12}
-td.lista.largo{font-size:8.3px;letter-spacing:-.01em}td.lista.largo b{font-size:8px}
+td.lista.largo{font-size:8px;letter-spacing:-.02em}td.lista.largo b{font-size:7.6px}
+td.lista.largo4{font-size:7.3px;letter-spacing:-.03em}td.lista.largo4 b{font-size:7px}
+td.l.largo{font-size:9px;letter-spacing:-.02em}
+td.sem{text-align:left;font:400 9.5px "Source Sans 3","Segoe UI",Arial,sans-serif;color:#4f584b}
 td.lista em{font-style:normal;color:#a7ad9f}
 td.vm{color:#a3361c;font-weight:500}td.vn{color:#8a6a12;font-weight:500}
 tr.t td{background:color-mix(in srgb,var(--c) 14%,white);border-top:1.5px solid var(--c);font-weight:600}
@@ -72,6 +76,22 @@ tr.t td.l{font:700 9.5px "IBM Plex Mono",Consolas,monospace;letter-spacing:.05em
 .nota{margin-top:8px;font-size:9px;color:#4f584b;line-height:1.45}
 .nota b{color:#1c221b}
 """
+
+
+AJUSTE = """<script>
+// Si un texto no cabe en su celda, baja la letra de esa celda poco a poco (mínimo 6,5 px)
+document.querySelectorAll("td.lista, td.sem, td.l").forEach(function (td) {
+  var t = 0, tam = parseFloat(getComputedStyle(td).fontSize);
+  while (td.scrollWidth > td.clientWidth + 0.5 && tam > 6.5 && t++ < 40) {
+    tam -= 0.2; td.style.fontSize = tam + "px";
+    td.querySelectorAll("b").forEach(function (b) { b.style.fontSize = (tam - 0.4) + "px"; });
+  }
+});
+</script>"""
+
+
+def miles(n):
+    return f"{n:,}".replace(",", ".")
 
 
 def pc(v, dec=1):
@@ -91,12 +111,32 @@ def medias(bloques):
     return out
 
 
+SEMANA_DE = json.loads((AQUI / "semanas_2026_ia.json").read_text(encoding="utf-8"))["fecha_a_semana"]
+
+
+def semanas_txt(bloques):
+    """Semanas con escandallo (fechas de las medidas de firmeza) en tramos: «S32-34 y S37»."""
+    ns = sorted({int(SEMANA_DE[f.strftime("%d/%m/%Y")][1:]) for b in bloques for f, _, _ in b["firmeza"]})
+    tramos, i = [], 0
+    while i < len(ns):
+        j = i
+        while j + 1 < len(ns) and ns[j + 1] == ns[j] + 1:
+            j += 1
+        tramos.append(f"S{ns[i]}" if i == j else f"S{ns[i]}-{ns[j]}")
+        i = j + 1
+    if not tramos:
+        return "—"
+    return tramos[0] if len(tramos) == 1 else ", ".join(tramos[:-1]) + " y " + tramos[-1]
+
+
 def lista(problemas, umbral, clase):
     sel = [(p, v) for p, v in problemas if v >= umbral]
     if not sel:
         return f'<td class="lista {clase} sep"><em>—</em></td>'
-    txt = " · ".join(f"<b>{pc(v)}%</b> {e(p.capitalize())}" for p, v in sel)
-    largo = " largo" if len(sel) >= 3 else ""   # 3 problemas: letra un poco más pequeña para que quepa en la fila
+    # el % va en la cabecera; los valores redondos sin ",0" (10 en vez de 10,0) para ahorrar sitio
+    txt = " · ".join(f"<b>{pc(v).removesuffix(',0')}</b> {e(p.capitalize())}" for p, v in sel)
+    # con 3 o más problemas, letra algo más pequeña para que quepa en la fila
+    largo = " largo4" if len(sel) >= 4 else (" largo" if len(sel) == 3 else "")
     return f'<td class="lista {clase} sep{largo}">{txt}</td>'
 
 
@@ -113,19 +153,19 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
     n_filas = len(filas_datos) + 1
     alto = max(16, min(24, (H - 76 - 30 - 92 - 10 - 15 - 20 - 46) // n_filas))
     col = COLOR.get(tipo, "#6b7466")
-    filas = [f'<tr class="t" style="height:{alto}px;--c:{col}"><td class="num"></td><td class="l">Media del tipo</td>'
-             f'<td>{len({b["variedad"] for b in todos})}</td><td>{melones:,}</td>'.replace(",", ".")
+    filas = [f'<tr class="t" style="height:{alto}px;--c:{col}"><td class="num"></td><td class="l">Media del tipo</td><td class="sem">{semanas_txt(todos)}</td>'
+             f'<td>{miles(melones)}</td>'
              + lista(M["mayores"], umb_may, "m") + f'<td class="vm">{pc(sm)}</td>'
              + lista(M["menores"], umb_men, "n") + f'<td class="vn">{pc(sn)}</td></tr>']
     for i, (finca, bs, m, fm, fn) in enumerate(filas_datos, start=1):
         mel = sum(len(b["firmeza"]) for b in bs)
-        filas.append(f'<tr style="height:{alto}px"><td class="num">{i}</td><td class="l">{e(finca)}</td>'
-                     f'<td>{len({b["variedad"] for b in bs})}</td><td>{mel:,}</td>'.replace(",", ".")
+        filas.append(f'<tr style="height:{alto}px"><td class="num">{i}</td><td class="l{" largo" if len(finca) > 24 else ""}">{e(finca)}</td><td class="sem">{semanas_txt(bs)}</td>'
+                     f'<td>{miles(mel)}</td>'
                      + lista(m["mayores"], umb_may, "m") + f'<td class="vm">{pc(fm)}</td>'
                      + lista(m["menores"], umb_men, "n") + f'<td class="vn">{pc(fn)}</td></tr>')
-    cols = [("#", 3, ""), ("Finca", 23.5, "l"), ("Var.", 4, ""), ("Melones", 6, ""),
-            (f"≥ {umb_may}% · de más a menos", 29, "l"), ("Suma", 4.5, ""),
-            (f"≥ {umb_men}% · de más a menos", 25.5, "l"), ("Suma", 4.5, "")]
+    cols = [("#", 2.3, ""), ("Finca", 15.5, "l"), ("Semanas", 14.5, "l"), ("Mel.", 5.2, ""),
+            (f"% · desde {umb_may}% · de más a menos", 26, "l"), ("Suma %", 4.5, ""),
+            (f"% · desde {umb_men}% · de más a menos", 27.5, "l"), ("Suma %", 4.5, "")]
     ths = "".join(f'<th class="{c}" style="width:{w}%">{t}</th>' for t, w, c in cols)
     ancho_m = cols[4][1] + cols[5][1]
     ancho_n = cols[6][1] + cols[7][1]
@@ -141,9 +181,9 @@ def pagina(tipo, fincas, num, total, umb_may, umb_men):
 <div class="kpi may"><span class="lab">Suma problemas mayores</span><b>{pc(sm, 2)}%</b><small>El que más: {e(top_m)}</small></div>
 <div class="kpi men"><span class="lab">Suma problemas menores</span><b>{pc(sn, 2)}%</b><small>El que más: {e(top_n)}</small></div>
 </div>{banda}<table><thead><tr>{ths}</tr></thead><tbody>{"".join(filas)}</tbody></table>
-<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada fila salen los problemas mayores de {umb_may}% o más y los menores de {umb_men}% o más;
+<p class="nota">Fincas ordenadas de más a menos problemas mayores. En cada fila salen, con su %, los problemas mayores de {umb_may}% o más y los menores de {umb_men}% o más;
 <b>Suma</b> = todos los problemas de esa clase, salgan o no en la lista. % de toda la temporada (el volcado no trae fecha de los problemas).
-Si una finca tiene varias variedades, cada escandallo pesa según sus melones medidos. <b>Var.</b> = variedades; <b>Melones</b> = medidas de firmeza.</p>'''.replace(f"{melones:,}", f"{melones:,}".replace(",", "."))
+Si una finca tiene varias variedades, cada escandallo pesa según sus melones medidos. <b>Semanas</b> = semanas con escandallo (S32-34 = de la 32 a la 34). <b>Mel.</b> = melones medidos (medidas de firmeza).</p>'''.replace(f"{melones:,}", f"{melones:,}".replace(",", "."))
     return (f'<div class="pg"><div class="cuerpo">{cuerpo}</div><div class="pie"><span>{TITULO} · <b>{e(tipo.title())}</b></span>'
             f'<span>Página {num} de {total}</span></div></div>')
 
@@ -163,8 +203,8 @@ def nombre_finca(fila, tipo, por_defecto):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("volcado", type=Path)
-    ap.add_argument("--mayores", type=float, default=5)
-    ap.add_argument("--menores", type=float, default=10)
+    ap.add_argument("--mayores", type=float, default=4)
+    ap.add_argument("--menores", type=float, default=7)
     ap.add_argument("--salida", default="Problemas por finca 2026")
     args = ap.parse_args()
 
@@ -183,7 +223,7 @@ def main():
     tipos = sorted(por_tipo)
     paginas = [pagina(t, por_tipo[t], i, len(tipos), umb_may, umb_men) for i, t in enumerate(tipos, start=1)]
     doc = (f'<!doctype html><html lang="es"><head><meta charset="utf-8"><title>{TITULO}</title>{FUENTES}'
-           f'<style>{CSS}</style></head><body>{"".join(paginas)}</body></html>')
+           f'<style>{CSS}</style></head><body>{"".join(paginas)}{AJUSTE}</body></html>')
     ruta_html, ruta_pdf = Path(args.salida + ".html"), Path(args.salida + ".pdf")
     ruta_html.write_text(doc, encoding="utf-8")
     if os.path.exists(CHROME):
