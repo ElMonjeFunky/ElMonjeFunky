@@ -7,7 +7,8 @@ Uso:
     python3 problemas_fincas.py VOLCADO.csv [--mayores 5] [--menores 10]
                                 [--salida "Problemas por finca 2026"]
 
-Nombre de finca: columna nombre_final de fincas_nombres.csv. Los % son de toda la
+Nombre de finca: columna nombre_final de fincas_nombres.csv (con los asociados GGN ya
+convertidos a su agricultor; columna por_tipo para excepciones por tipo de melón). Los % son de toda la
 temporada (el volcado no trae fecha de los problemas). Si una finca tiene varias
 variedades o códigos, cada escandallo pesa según sus melones medidos (medidas de
 firmeza; mínimo 1) y un problema que no aparece cuenta como 0 %.
@@ -147,6 +148,18 @@ Si una finca tiene varias variedades, cada escandallo pesa según sus melones me
             f'<span>Página {num} de {total}</span></div></div>')
 
 
+def nombre_finca(fila, tipo, por_defecto):
+    """Nombre de la finca en el informe (fincas_nombres.csv). La columna por_tipo
+    permite excepciones: «SUNUP=Vicente Alberca» = si el melón es Sunup, va a ese nombre."""
+    if not fila:
+        return por_defecto
+    for regla in filter(None, fila.get("por_tipo", "").split("|")):
+        t, nombre = regla.split("=", 1)
+        if t.strip().upper() == tipo.upper():
+            return nombre.strip()
+    return fila["nombre_final"]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("volcado", type=Path)
@@ -155,16 +168,15 @@ def main():
     ap.add_argument("--salida", default="Problemas por finca 2026")
     args = ap.parse_args()
 
-    nombre_final = {r["nombre_erp"]: r["nombre_final"]
-                    for r in csv.DictReader(open(AQUI / "fincas_nombres.csv", encoding="utf-8"), delimiter=";")}
+    nombres = {r["nombre_erp"]: r for r in csv.DictReader(open(AQUI / "fincas_nombres.csv", encoding="utf-8"), delimiter=";")}
     nombre_erp = {}
     for fila in csv.reader(open(args.volcado, encoding="latin-1"), delimiter=";"):
         if len(fila) > 8 and fila[8] == "00/00/0000":
             nombre_erp[fila[4]] = fila[5]
     por_tipo = defaultdict(lambda: defaultdict(list))
     for b in leer_bloques(args.volcado):
-        finca = nombre_final.get(nombre_erp.get(b["cod_finca"], ""), b["finca"])
-        por_tipo[tipo_y_categoria(b["producto"])[0]][finca].append(b)
+        tipo = tipo_y_categoria(b["producto"])[0]
+        por_tipo[tipo][nombre_finca(nombres.get(nombre_erp.get(b["cod_finca"], "")), tipo, b["finca"])].append(b)
 
     umb_may = int(args.mayores) if args.mayores == int(args.mayores) else args.mayores
     umb_men = int(args.menores) if args.menores == int(args.menores) else args.menores
