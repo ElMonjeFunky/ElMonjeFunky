@@ -215,6 +215,55 @@ def celda_dia(revs):
     return '<td class="dia">' + '<hr class="sep">'.join(partes) + '</td>'
 
 
+def piezas(r):
+    try:
+        return max(int(r['sumesc']), 1)
+    except ValueError:
+        return 1
+
+
+def celda_unificada(revs):
+    """Celda de un día para varias fichas unificadas: % ponderado por nº de piezas.
+    Un problema que no aparece en una ficha cuenta como 0% en esa ficha."""
+    if not revs:
+        return '<td class="dia vacio">—</td>'
+    tot = 0
+    acc = collections.OrderedDict()
+    dias_raros = set()
+    for n, r in sorted(revs, key=lambda x: x[0]):
+        pz = piezas(r)
+        tot += pz
+        if n not in (5, 7, 10):
+            dias_raros.add(n)
+        for sec in ('MAY', 'MEN'):
+            for c, d, v in r['probs'][sec]:
+                try:
+                    val = float(v.replace(',', '.'))
+                except ValueError:
+                    continue
+                acc[(sec, d)] = acc.get((sec, d), 0.0) + val * pz
+    partes = []
+    info = [f'{len(revs)} fichas · {tot} pzas' if len(revs) > 1 else f'{tot} pzas']
+    if dias_raros:
+        info.append('día ' + '/'.join(str(x) for x in sorted(dias_raros)))
+    partes.append('<div class="nota">' + ' · '.join(info) + '</div>')
+    if not acc:
+        partes.append('<div class="ok">sin incidencias</div>')
+    else:
+        for sec, cls, lbl in (('MAY', 'may', 'MAYORES'), ('MEN', 'men', 'menores')):
+            items = [(d, acc[(sc, d)] / tot) for (sc, d) in acc if sc == sec]
+            if items:
+                items.sort(key=lambda x: -x[1])
+                partes.append(f'<div class="{cls}"><span class="lbl">{lbl}</span>' +
+                              ''.join(f'<span class="p">{esc(d)} <b>{fmt_num(x)}%</b></span>' for d, x in items) + '</div>')
+    return '<td class="dia">' + ''.join(partes) + '</td>'
+
+
+def fmt_num(x):
+    t = f'{x:.1f}'.rstrip('0').rstrip('.')
+    return t.replace('.', ',')
+
+
 # ---------------------------------------------------------------- HTML
 
 CSS = r"""
@@ -377,9 +426,10 @@ aunque esas revisiones caigan en semanas posteriores.</p>
     out.append('</div>')
     out.append("""<div class="notas">
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
-<p><b>Columnas día 5 / 7 / 10:</b> fichas del ERP con ese nº de días en conservación. Las fichas con otro nº de días (11, 12, 13…) se colocan en la columna más cercana y llevan la etiqueta <span class="nota">día n</span> con el valor real. «—» = no hay ficha para ese día.</p>
-<p><b>Problemas:</b> MAYORES y menores tal y como vienen en la ficha, con el % de piezas afectadas. «Sin incidencias» = ficha sin ningún problema anotado.</p>
-<p><b>Identificación:</b> código de variedad del ERP, finca (texto de «FINCA DESDE»), «calibre ERP» (campo CALIBRE del volcado: en productos de pieza es el calibre real, en otros es un código de formato), albarán/lote, fecha de recepción y nº de piezas del escandallo (SUM.P.ESCAND.).</p>
+<p><b>Filas unificadas:</b> dentro de cada semana, todas las entradas de la misma finca y el mismo producto van en una sola fila. Se indican variedades, fechas de recepción, nº de entradas, piezas totales y albaranes.</p>
+<p><b>Columnas día 5 / 7 / 10:</b> revisiones con ese nº de días en conservación. Cuando hay varias fichas unificadas, el % de cada problema es la <b>media ponderada por piezas</b> (una ficha donde no aparece el problema cuenta como 0%); la celda indica cuántas fichas y piezas se han unido. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
+<p><b>Problemas:</b> MAYORES y menores tal y como vienen en la ficha, con el % de piezas afectadas, ordenados de mayor a menor. «Sin incidencias» = ninguna ficha anota problemas.</p>
+<p><b>Identificación:</b> código de variedad, finca, fecha de recepción, nº de entradas y albarán. El nº de piezas se indica en cada celda, porque puede variar entre revisiones.</p>
 <p><b>Calendario de portada:</b> campaña completa de septiembre a mayo; las semanas en verde tienen producto escandallado, las blancas no. La línea dorada marca el cambio de año.</p>
 <p><b>Orden de productos:</b> en cada semana los productos aparecen siempre en el orden maestro de la leyenda; solo se listan los que tienen entradas esa semana.</p>
 <p><b>Fuera del informe:</b> lechuga iceberg (convencional y ECO), pimientos, melones y registros sin producto.</p>
@@ -421,32 +471,42 @@ aunque esas revisiones caigan en semanas posteriores.</p>
 </div>
 <table class="t"><colgroup><col style="width:28%"><col style="width:24%"><col style="width:24%"><col style="width:24%"></colgroup>
 <thead><tr><th>Producto · variedad · finca</th><th class="dia">Día 5</th><th class="dia">Día 7</th><th class="dia">Día 10</th></tr></thead>""")
-        prod_actual = None
+        # unificar: misma finca y mismo producto dentro de la semana
+        filas = collections.OrderedDict()
         for g in gs:
-            if g['prod'] != prod_actual:
+            k = (g['prod'], g['fname'])
+            f = filas.setdefault(k, dict(prod=g['prod'], fname=g['fname'], entradas=[], dias={5: [], 7: [], 10: []}))
+            f['entradas'].append(g)
+            for col in (5, 7, 10):
+                f['dias'][col].extend(g['dias'][col])
+        prod_actual = None
+        for (prod, fname), f in filas.items():
+            if prod != prod_actual:
                 if prod_actual is not None:
                     out.append('</tbody>')
-                prod_actual = g['prod']
-                n_e = sum(1 for x in gs if x['prod'] == prod_actual)
-                n_vv = len({x['var'] for x in gs if x['prod'] == prod_actual})
-                out.append(f'<tbody class="prod"><tr class="ph"><td colspan="4"><span class="dot" style="background:{color[prod_actual]}"></span>'
-                           f'{esc(nombre(prod_actual))} <span class="n">{esc(prod_actual)} · {n_vv} var · {n_e} entradas</span></td></tr>')
-            var = g['var'] or 'sin variedad'
-            fin = g['fname'] or 'finca no indicada'
+                prod_actual = prod
+                n_e = sum(1 for x in gs if x['prod'] == prod)
+                n_vv = len({x['var'] for x in gs if x['prod'] == prod})
+                n_ff = sum(1 for (pp, _) in filas if pp == prod)
+                out.append(f'<tbody class="prod"><tr class="ph"><td colspan="4"><span class="dot" style="background:{color[prod]}"></span>'
+                           f'{esc(nombre(prod))} <span class="n">{esc(prod)} · {n_vv} var · {n_ff} fincas · {n_e} entradas</span></td></tr>')
+            ent = f['entradas']
+            vars_ = sorted({g['var'] or 'sin variedad' for g in ent})
+            albs = sorted({g['fcode'] for g in ent if g['fcode']})
+            fechas_e = sorted({g['fecha'] for g in ent})
+            pz = sum(piezas(g['dias'][5][0][1]) if g['dias'][5] else
+                     piezas(g['dias'][7][0][1]) if g['dias'][7] else
+                     piezas(g['dias'][10][0][1]) if g['dias'][10] else 0 for g in ent)
+            fin = fname or 'finca no indicada'
             meta = []
-            if g['cal']:
-                meta.append(f'calibre ERP {esc(g["cal"])}')
-            if g['fcode']:
-                meta.append(f'alb {esc(g["fcode"])}')
-            meta.append(f'rec {flarga(g["fecha"])}')
-            if g['sumesc']:
-                meta.append(f'{esc(g["sumesc"])} pzas')
-            otros = ''
-            if g['otros']:
-                otros = '<div class="meta">fichas sin nº de días: ' + str(len(g['otros'])) + '</div>'
-            out.append(f'<tr><td class="id"><span class="var">{esc(var)}</span> <span class="fin">{esc(fin)}</span>'
-                       f'<div class="meta">{" · ".join(meta)}</div>{otros}</td>'
-                       + celda_dia(g['dias'][5]) + celda_dia(g['dias'][7]) + celda_dia(g['dias'][10]) + '</tr>')
+            meta.append(('rec ' if len(fechas_e) == 1 else 'rec ') + ', '.join(d.strftime('%d/%m') for d in fechas_e) + f'/{fechas_e[0].year}')
+            if len(ent) > 1:
+                meta.append(f'{len(ent)} entradas')
+            if albs:
+                meta.append('alb ' + ', '.join(albs))
+            out.append(f'<tr><td class="id"><span class="var">{esc(", ".join(vars_))}</span> <span class="fin">{esc(fin)}</span>'
+                       f'<div class="meta">{" · ".join(meta)}</div></td>'
+                       + celda_unificada(f['dias'][5]) + celda_unificada(f['dias'][7]) + celda_unificada(f['dias'][10]) + '</tr>')
         if prod_actual is not None:
             out.append('</tbody>')
         out.append('</table></div>')
