@@ -150,6 +150,17 @@ def rango_semanas(d0, d1):
     return out
 
 
+def campana(d0, d1):
+    """Campaña de lechuga: de la semana del 1 de septiembre a la última de mayo.
+    Devuelve (año_inicio, año_fin, lista de semanas). Si los datos se salen, se amplía."""
+    y0 = d0.year if d0.month >= 9 else d0.year - 1
+    ini = datetime.date(y0, 9, 1)
+    fin = datetime.date(y0 + 1, 5, 31)
+    ini = min(ini, d0)
+    fin = max(fin, d1)
+    return y0, y0 + 1, rango_semanas(ini, fin)
+
+
 # ---------------------------------------------------------------- formato
 
 MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -215,26 +226,33 @@ body { font-family: 'Source Sans 3', 'Source Sans Pro', 'Segoe UI', 'Helvetica N
 .mono { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace; }
 .kicker { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 7.5pt; letter-spacing: .12em;
           text-transform: uppercase; color: #6b6b6b; }
-h1 { font-size: 26pt; margin: 4px 0 8px; color: #2e6b3e; letter-spacing: -.01em; }
-.lead { color: #444; margin: 0 0 14px; max-width: 170mm; }
-.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 14px; }
-.card { border: 1px solid #ddd; border-radius: 4px; padding: 7px 10px; background: #f7f7f4; }
+h1 { font-size: 24pt; margin: 2px 0 6px; color: #2e6b3e; letter-spacing: -.01em; }
+.lead { color: #444; margin: 0 0 10px; max-width: 170mm; }
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+.card { border: 1px solid #ddd; border-radius: 4px; padding: 5px 9px; background: #f7f7f4; }
 .card .k { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 6.8pt; letter-spacing: .1em;
            text-transform: uppercase; color: #6b6b6b; }
-.card .v { font-size: 15pt; font-weight: 700; margin-top: 2px; }
+.card .v { font-size: 13pt; font-weight: 700; margin-top: 1px; }
 .card .v small { font-size: 8pt; font-weight: 400; color: #666; }
-h2 { font-size: 12pt; margin: 10px 0 6px; color: #333; }
-.cal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-.wk { border: 1px dashed #c8c8c8; border-radius: 4px; padding: 6px 8px; min-height: 52px; font-size: 7.6pt; }
-.wk.has { background: #e8efe0; border: 1px solid #c6d4b8; }
-.wk .s { font-weight: 700; font-size: 10.5pt; color: #777; }
+h2 { font-size: 12pt; margin: 8px 0 5px; color: #333; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+h2 .kicker { text-transform: none; letter-spacing: .04em; font-size: 7pt; text-align: right; }
+.cal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.wk { border: 1px dashed #c8c8c8; border-radius: 3px; padding: 4px 6px; min-height: 40px; font-size: 7pt; line-height: 1.2; }
+.wk.has { background: #dfe9d3; border: 1px solid #b7c9a5; }
+.wk .s { font-weight: 700; font-size: 9.5pt; color: #999; }
+.wk .s .y { font-size: 6.5pt; font-weight: 400; color: #999; }
 .wk.has .s { color: #2e6b3e; }
-.wk .d { font-weight: 600; margin: 1px 0; }
-.wk .m { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 7pt; color: #555; }
-.legend { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: 'IBM Plex Mono', monospace;
+.wk.has .s .y { color: #5a8a5e; }
+.wk .d { font-weight: 600; margin: 0; color: #666; }
+.wk.has .d { color: #222; }
+.wk .m { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 6.3pt; color: #666; }
+.yr { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 3px 0; font-family: 'IBM Plex Mono', monospace;
+      font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: #8a6d3b; }
+.yr::before, .yr::after { content: ''; flex: 1; border-top: 2px solid #c9a227; }
+.legend { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: 'IBM Plex Mono', monospace;
           font-size: 7pt; letter-spacing: .06em; text-transform: uppercase; color: #444; }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.notas { margin-top: 12px; font-size: 8pt; color: #333; border-top: 1px solid #ddd; padding-top: 8px; }
+.notas { margin-top: 10px; font-size: 8pt; color: #333; border-top: 1px solid #ddd; padding-top: 8px; }
 .notas p { margin: 3px 0; }
 
 .page { page-break-before: always; break-before: page; }
@@ -286,7 +304,7 @@ hr.sep { border: 0; border-top: 1px dashed #ccc; margin: 3px 0; }
 def generar_html(grupos, src_name, titulo):
     fechas = [g['fecha'] for g in grupos]
     d0, d1 = min(fechas), max(fechas)
-    semanas = rango_semanas(d0, d1)
+    y_ini, y_fin, semanas = campana(d0, d1)
     por_sem = collections.defaultdict(list)
     for g in grupos:
         por_sem[semana_iso(g['fecha'])].append(g)
@@ -318,7 +336,7 @@ def generar_html(grupos, src_name, titulo):
 
     # ---------------- portada
     out.append(f"""
-<div class="kicker">CONTROL DE CALIDAD · CPT LECHUGAS Y HOJA · {esc(src_name)}</div>
+<div class="kicker">CONTROL DE CALIDAD · CPT LECHUGAS Y HOJA · CAMPAÑA {y_ini % 100:02d}/{y_fin % 100:02d} · {esc(src_name)}</div>
 <h1>{esc(titulo)}</h1>
 <p class="lead">Una página por semana de <b>recepción en almacén</b> (lunes a domingo). Cada entrada se agrupa en la semana
 en la que entró el producto, con lo observado en las revisiones a <b>día 5</b>, <b>día 7</b> y <b>día 10</b> de conservación,
@@ -331,21 +349,26 @@ aunque esas revisiones caigan en semanas posteriores.</p>
  <div class="card"><div class="k">Productos</div><div class="v">{len(productos)}</div></div>
  <div class="card"><div class="k">Variedades</div><div class="v">{n_var}</div></div>
  <div class="card"><div class="k">Fincas</div><div class="v">{n_fincas}</div></div>
- <div class="card"><div class="k">Piezas muestreadas</div><div class="v">{n_piezas:,}</div></div>
+ <div class="card"><div class="k">Piezas muestreadas</div><div class="v">{f"{n_piezas:,}".replace(",", ".")}</div></div>
 </div>
-<h2>Las semanas de la campaña <span class="kicker" style="float:right">E = entradas · F = fincas · P = productos</span></h2>
-<div class="cal">""".replace(',', '.'))
+<h2>Campaña {y_ini % 100:02d}/{y_fin % 100:02d} · semana a semana <span class="kicker">septiembre {y_ini} → mayo {y_fin} · verde = semana con producto escandallado</span></h2>
+<div class="cal">""")
+    anio_actual = None
     for s in semanas:
         y, w = s
         a = lunes(y, w)
         b = a + datetime.timedelta(days=6)
+        if y != anio_actual:
+            if anio_actual is not None:
+                out.append(f'<div class="yr"><span>cambio de año · {anio_actual} → {y}</span></div>')
+            anio_actual = y
         gs = por_sem.get(s, [])
         cls = 'wk has' if gs else 'wk'
         if gs:
-            m = f"{len(gs)} entr · {len({g['fname'] for g in gs})} fincas<br>{len({g['prod'] for g in gs})} productos"
+            m = f"{len(gs)} entr · {len({g['fname'] for g in gs})} fin · {len({g['prod'] for g in gs})} prod"
         else:
             m = 'sin escandallos'
-        out.append(f'<div class="{cls}"><div class="s">{etiqueta_sem(s)} <span style="font-size:7pt;font-weight:400">{y}</span></div>'
+        out.append(f'<div class="{cls}"><div class="s">{etiqueta_sem(s)} <span class="y">{y}</span></div>'
                    f'<div class="d">{fcorta(a)} – {fcorta(b)}</div><div class="m">{m}</div></div>')
     out.append('</div><div class="legend">')
     out.append('<span style="width:100%;letter-spacing:.1em">Orden maestro de productos:</span>')
@@ -356,7 +379,8 @@ aunque esas revisiones caigan en semanas posteriores.</p>
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
 <p><b>Columnas día 5 / 7 / 10:</b> fichas del ERP con ese nº de días en conservación. Las fichas con otro nº de días (11, 12, 13…) se colocan en la columna más cercana y llevan la etiqueta <span class="nota">día n</span> con el valor real. «—» = no hay ficha para ese día.</p>
 <p><b>Problemas:</b> MAYORES y menores tal y como vienen en la ficha, con el % de piezas afectadas. «Sin incidencias» = ficha sin ningún problema anotado.</p>
-<p><b>Identificación:</b> código de variedad del ERP, finca (texto de «FINCA DESDE»), calibre, albarán/lote, fecha de recepción y nº de piezas del escandallo (SUM.P.ESCAND.).</p>
+<p><b>Identificación:</b> código de variedad del ERP, finca (texto de «FINCA DESDE»), «calibre ERP» (campo CALIBRE del volcado: en productos de pieza es el calibre real, en otros es un código de formato), albarán/lote, fecha de recepción y nº de piezas del escandallo (SUM.P.ESCAND.).</p>
+<p><b>Calendario de portada:</b> campaña completa de septiembre a mayo; las semanas en verde tienen producto escandallado, las blancas no. La línea dorada marca el cambio de año.</p>
 <p><b>Orden de productos:</b> en cada semana los productos aparecen siempre en el orden maestro de la leyenda; solo se listan los que tienen entradas esa semana.</p>
 <p><b>Fuera del informe:</b> lechuga iceberg (convencional y ECO), pimientos, melones y registros sin producto.</p>
 </div>""")
@@ -411,7 +435,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
             fin = g['fname'] or 'finca no indicada'
             meta = []
             if g['cal']:
-                meta.append(f'cal {esc(g["cal"])}')
+                meta.append(f'calibre ERP {esc(g["cal"])}')
             if g['fcode']:
                 meta.append(f'alb {esc(g["fcode"])}')
             meta.append(f'rec {flarga(g["fecha"])}')
@@ -480,7 +504,7 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     recs = leer_csv(csv_path)
     grupos = agrupar(recs)
-    titulo = 'Escandallo semanal CPT lechugas 2025–2026'
+    titulo = 'Escandallo semanal CPT lechugas · campaña 25/26'
     html_txt, semanas, con_datos = generar_html(grupos, os.path.basename(csv_path), titulo)
     base = os.path.join(out_dir, 'informe_cpt_lechugas_semanal')
     with open(base + '.html', 'w', encoding='utf-8') as f:
