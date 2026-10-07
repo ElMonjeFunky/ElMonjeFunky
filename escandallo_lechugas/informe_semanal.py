@@ -88,7 +88,7 @@ ALIAS_PROBLEMAS = {
 # Nombre a mostrar (con tildes) para las claves normalizadas
 NOMBRE_PROB = {
     'PUDRICION BLANDA': 'PUDRICIÓN BLANDA', 'MILDEW MARRON': 'MILDEW MARRÓN',
-    'DESHIDRATACION FUERTE': 'DESHIDRATACIÓN FUERTE', 'DECOLORACION': 'DECOLORACIÓN',
+    'DESHIDRATACION FUERTE': 'DESHIDRAT. FUERTE', 'DECOLORACION': 'DECOLORACIÓN', 'COST. PODRIDO INTERNO': 'COST. PODRIDO INT.',
     'COSTILLAR DANADO': 'COSTILLAR DAÑADO', 'PULGON AISLADO': 'PULGÓN AISLADO', 'PULGON FAMILIAR': 'PULGÓN FAMILIAR',
     'DANO POR PLAGA <1/3': 'DAÑO POR PLAGA <1/3', 'DANO POR PLAGA >1/3 SUPERF': 'DAÑO POR PLAGA >1/3',
     'PESTANAS BLANCAS': 'PESTAÑAS BLANCAS', 'PESTANAS ROTAS': 'PESTAÑAS ROTAS', 'PESTANA PODRIDA': 'PESTAÑA PODRIDA',
@@ -376,21 +376,24 @@ body { font-family: 'Source Sans 3', 'Source Sans Pro', 'Segoe UI', 'Helvetica N
 .mono { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace; }
 .kicker { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 7.5pt; letter-spacing: .12em;
           text-transform: uppercase; color: #6b6b6b; }
-h1 { font-size: 24pt; margin: 2px 0 6px; color: #2e6b3e; letter-spacing: -.01em; }
+h1 { font-size: 23pt; margin: 2px 0 6px; color: #2e6b3e; letter-spacing: -.01em; white-space: nowrap; }
+h1 .camp { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 2px 8px; border-radius: 3px;
+           background: #2e6b3e; color: #fff; font-size: 9.5pt; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .lead { color: #444; margin: 0 0 10px; max-width: 170mm; }
 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
-.card { border: 1px solid #ddd; border-radius: 4px; padding: 5px 9px; background: #f7f7f4; }
+.card { border: 1px solid #ddd; border-radius: 4px; padding: 4px 9px; background: #f7f7f4; }
 .card .k { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-size: 6.8pt; letter-spacing: .1em;
            text-transform: uppercase; color: #6b6b6b; }
-.card .v { font-size: 13pt; font-weight: 700; margin-top: 1px; }
+.card .v { font-size: 12pt; font-weight: 700; margin-top: 0; white-space: nowrap; }
 .card .v small { font-size: 8pt; font-weight: 400; color: #666; }
 h2 { font-size: 12pt; margin: 8px 0 5px; color: #333; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 h2 .kicker { text-transform: none; letter-spacing: .04em; font-size: 7pt; text-align: right; }
 .cal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
-.wk { border: 1px dashed #c8c8c8; border-radius: 3px; padding: 4px 6px; min-height: 40px; font-size: 7pt; line-height: 1.2; }
+.wk { border: 1px dashed #c8c8c8; border-radius: 3px; padding: 3px 6px; min-height: 36px; font-size: 7pt; line-height: 1.2; }
 .wk.has { background: #dfe9d3; border: 1px solid #b7c9a5; }
 .wk .s { font-weight: 700; font-size: 9.5pt; color: #999; }
 .wk .s .y { font-size: 6.5pt; font-weight: 400; color: #999; }
+.wk .s .pg { float: right; font-family: 'IBM Plex Mono', monospace; font-size: 6.3pt; font-weight: 400; color: #5a8a5e; margin-top: 3px; }
 .wk.has .s { color: #2e6b3e; }
 .wk.has .s .y { color: #5a8a5e; }
 .wk .d { font-weight: 600; margin: 0; color: #666; }
@@ -399,10 +402,10 @@ h2 .kicker { text-transform: none; letter-spacing: .04em; font-size: 7pt; text-a
 .yr { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin: 3px 0; font-family: 'IBM Plex Mono', monospace;
       font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: #8a6d3b; }
 .yr::before, .yr::after { content: ''; flex: 1; border-top: 2px solid #c9a227; }
-.legend { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: 'IBM Plex Mono', monospace;
-          font-size: 7pt; letter-spacing: .06em; text-transform: uppercase; color: #444; }
+.legend { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 2px 10px; font-family: 'IBM Plex Mono', monospace;
+          font-size: 6.4pt; letter-spacing: .04em; text-transform: uppercase; color: #444; line-height: 1.35; }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-.notas { margin-top: 10px; font-size: 8pt; color: #333; border-top: 1px solid #ddd; padding-top: 8px; }
+.notas { margin-top: 8px; font-size: 7.4pt; color: #333; border-top: 1px solid #ddd; padding-top: 8px; }
 .notas p { margin: 3px 0; }
 
 .page { page-break-before: always; break-before: page; }
@@ -418,14 +421,17 @@ h2 .kicker { text-transform: none; letter-spacing: .04em; font-size: 7pt; text-a
 .box .k { font-family: 'IBM Plex Mono', monospace; font-size: 6.8pt; letter-spacing: .1em; text-transform: uppercase; color: #666; }
 .box .v { font-size: 17pt; font-weight: 700; color: #2e6b3e; }
 .box ul { margin: 3px 0 0; padding-left: 0; list-style: none; font-size: 8pt; }
+.box li b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.6pt; }
 .box li { display: flex; justify-content: space-between; gap: 6px; }
 
 table.t { width: 100%; border-collapse: collapse; table-layout: fixed; }
 table.t th { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 400; font-size: 6.8pt;
-             letter-spacing: .08em; text-transform: uppercase; color: #555; text-align: left;
+             letter-spacing: .05em; text-transform: uppercase; color: #555; text-align: left; white-space: nowrap;
              border-bottom: 1px solid #999; padding: 3px 5px; }
 table.t th.dia { border-left: 1px solid #e3e3e3; }
-table.t td { padding: 4px 5px; vertical-align: top; border-bottom: 1px solid #e6e6e6; font-size: 8.3pt; }
+table.t th .thn { color: #999; letter-spacing: 0; text-transform: none; margin-left: 4px; }
+table.t td { padding: 4px 5px 5px; vertical-align: top; border-bottom: 1px solid #e0e0e0; font-size: 8.3pt; }
+tbody.prod tr:nth-child(even) td { background: #fbfbf9; }
 table.t td.dia { border-left: 1px solid #e3e3e3; }
 table.t td.vacio { color: #aaa; text-align: center; }
 tbody.prod { break-inside: avoid; page-break-inside: avoid; }
@@ -442,13 +448,15 @@ td.id .meta { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-
 .may { color: #8c2f2a; }
 .men { color: #333; }
 .p { display: inline-block; margin-right: 7px; white-space: nowrap; }
-.ln { display: flex; justify-content: space-between; gap: 4px; white-space: nowrap; overflow: hidden; line-height: 1.3; }
+.ln { display: flex; justify-content: space-between; gap: 4px; white-space: nowrap; overflow: hidden; line-height: 1.32; font-size: 7.9pt; }
 .ln .nm { overflow: hidden; text-overflow: ellipsis; }
-.ln b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.6pt; }
+.ln b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.4pt; min-width: 34px; text-align: right; }
 .ln.may { color: #8c2f2a; } .ln.may .nm { font-weight: 700; }
 .ln.men { color: #333; }
-.ln.off { color: #b5b5b5; } .ln.off b { font-weight: 400; }
-td.dia .nota { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; margin-bottom: 1px; }
+.ln.off { color: #c0c0c0; } .ln.off b { font-weight: 400; }
+td.dia .nota { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; margin-bottom: 2px;
+               background: none; padding: 0; color: #8a8a8a; border-bottom: 1px dotted #ddd; }
+td.dia .nota .ok { color: #3c7a3e; font-weight: 600; }
 .p b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.6pt; }
 .ok { color: #3c7a3e; }
 .nota { font-family: 'IBM Plex Mono', monospace; font-size: 6.5pt; color: #8a6d3b; background: #faf3dc;
@@ -458,7 +466,8 @@ hr.sep { border: 0; border-top: 1px dashed #ccc; margin: 3px 0; }
 """
 
 
-def generar_html(grupos, src_name, titulo):
+def generar_html(grupos, src_name, titulo, paginas=None):
+    paginas = paginas or {}
     fechas = [g['fecha'] for g in grupos]
     d0, d1 = min(fechas), max(fechas)
     y_ini, y_fin, semanas = campana(d0, d1)
@@ -502,13 +511,13 @@ def generar_html(grupos, src_name, titulo):
     # ---------------- portada
     out.append(f"""
 <div class="kicker">CONTROL DE CALIDAD · CPT LECHUGAS Y HOJA · CAMPAÑA {y_ini % 100:02d}/{y_fin % 100:02d} · {esc(src_name)}</div>
-<h1>{esc(titulo)}</h1>
+<h1>Escandallo semanal CPT lechugas <span class="camp">campaña {y_ini % 100:02d}/{y_fin % 100:02d}</span></h1>
 <p class="lead">Una página por semana de <b>recepción en almacén</b> (lunes a domingo). Cada entrada se agrupa en la semana
 en la que entró el producto, con lo observado en las revisiones a <b>día 5</b>, <b>día 7</b> y <b>día 10</b> de conservación,
 aunque esas revisiones caigan en semanas posteriores.</p>
 <div class="cards">
  <div class="card"><div class="k">Semanas con datos</div><div class="v">{len(sem_con_datos)} <small>de {len(semanas)}</small></div></div>
- <div class="card"><div class="k">Periodo (recepción)</div><div class="v">{fcorta(d0)} {d0.year} – {fcorta(d1)} {d1.year}</div></div>
+ <div class="card"><div class="k">Periodo (recepción)</div><div class="v">{d0.strftime('%d/%m/%y')} – {d1.strftime('%d/%m/%y')}</div></div>
  <div class="card"><div class="k">Entradas escandalladas</div><div class="v">{len(grupos)}</div></div>
  <div class="card"><div class="k">Revisiones (fichas)</div><div class="v">{n_rev}</div></div>
  <div class="card"><div class="k">Productos</div><div class="v">{len(productos)}</div></div>
@@ -516,7 +525,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
  <div class="card"><div class="k">Fincas</div><div class="v">{n_fincas}</div></div>
  <div class="card"><div class="k">Piezas muestreadas</div><div class="v">{f"{n_piezas:,}".replace(",", ".")}</div></div>
 </div>
-<h2>Campaña {y_ini % 100:02d}/{y_fin % 100:02d} · semana a semana <span class="kicker">septiembre {y_ini} → mayo {y_fin} · verde = semana con producto escandallado</span></h2>
+<h2>Índice semana a semana <span class="kicker">sep {y_ini} → may {y_fin} · verde = semana con producto · pág. = página del informe</span></h2>
 <div class="cal">""")
     anio_actual = None
     for s in semanas:
@@ -533,7 +542,8 @@ aunque esas revisiones caigan en semanas posteriores.</p>
             m = f"{len(gs)} entr · {len({g['fname'] for g in gs})} fin · {len({g['prod'] for g in gs})} prod"
         else:
             m = 'sin escandallos'
-        out.append(f'<div class="{cls}"><div class="s">{etiqueta_sem(s)} <span class="y">{y}</span></div>'
+        pg = f'<span class="pg">pág. {paginas[s]}</span>' if s in paginas else ''
+        out.append(f'<div class="{cls}"><div class="s">{etiqueta_sem(s)} <span class="y">{y}</span>{pg}</div>'
                    f'<div class="d">{fcorta(a)} – {fcorta(b)}</div><div class="m">{m}</div></div>')
     out.append('</div><div class="legend">')
     out.append('<span style="width:100%;letter-spacing:.1em">Orden maestro de productos:</span>')
@@ -541,7 +551,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
         out.append(f'<span><span class="dot" style="background:{color[p]}"></span>{esc(nombre(p))}</span>')
     out.append('</div>')
     out.append('<div class="legend"><span style="width:100%;letter-spacing:.1em">Orden maestro de problemas:</span>')
-    out.append(' · '.join(f'<span>{i + 1}. {esc(nombre_problema(k))}</span>' for i, k in enumerate(ORDEN_PROBLEMAS) if k in gravedad))
+    out.append(' · '.join(f'<span>{esc(nombre_problema(k))}</span>' for k in ORDEN_PROBLEMAS if k in gravedad))
     out.append('</div>')
     out.append("""<div class="notas">
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
@@ -589,7 +599,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
  <div class="box"><div class="k">Problemas menores · nº de fichas</div><ul>{top_men}</ul></div>
 </div>
 <table class="t"><colgroup><col style="width:22%"><col style="width:26%"><col style="width:26%"><col style="width:26%"></colgroup>
-<thead><tr><th>Producto · variedad · finca</th><th class="dia">Día 5</th><th class="dia">Día 7</th><th class="dia">Día 10</th></tr></thead>""")
+<thead><tr><th>Variedad · finca</th><th class="dia">Día 5 <span class="thn">% piezas afectadas</span></th><th class="dia">Día 7</th><th class="dia">Día 10</th></tr></thead>""")
         # unificar: misma finca y mismo producto dentro de la semana
         filas = collections.OrderedDict()
         for g in gs:
@@ -678,17 +688,42 @@ def html_a_pdf(html_path, pdf_path, titulo):
     return 'chromium'
 
 
+def paginas_por_semana(pdf_path, semanas):
+    """Página en la que empieza cada semana, buscando «lunes dd/mm/aaaa» en el texto del PDF."""
+    try:
+        txt = subprocess.run(['pdftotext', '-layout', pdf_path, '-'], capture_output=True, text=True, check=True).stdout
+    except Exception:
+        return {}
+    pags = txt.split('\f')
+    out = {}
+    for s in semanas:
+        y, w = s
+        marca = 'lunes ' + flarga(lunes(y, w))
+        for i, p in enumerate(pags, 1):
+            if marca in p:
+                out[s] = i
+                break
+    return out
+
+
 def main():
     csv_path, out_dir = sys.argv[1], sys.argv[2]
     os.makedirs(out_dir, exist_ok=True)
     recs = leer_csv(csv_path)
     grupos = agrupar(recs)
     titulo = 'Escandallo semanal CPT lechugas · campaña 25/26'
-    html_txt, semanas, con_datos = generar_html(grupos, os.path.basename(csv_path), titulo)
     base = os.path.join(out_dir, 'informe_cpt_lechugas_semanal')
+    html_txt, semanas, con_datos = generar_html(grupos, os.path.basename(csv_path), titulo)
     with open(base + '.html', 'w', encoding='utf-8') as f:
         f.write(html_txt)
     motor = html_a_pdf(base + '.html', base + '.pdf', titulo)
+    # segunda pasada: localizar la página de cada semana y escribirla en el índice de portada
+    paginas = paginas_por_semana(base + '.pdf', con_datos)
+    if paginas:
+        html_txt, semanas, con_datos = generar_html(grupos, os.path.basename(csv_path), titulo, paginas)
+        with open(base + '.html', 'w', encoding='utf-8') as f:
+            f.write(html_txt)
+        motor = html_a_pdf(base + '.html', base + '.pdf', titulo)
     print(f'fichas leídas: {len(recs)}  entradas agrupadas: {len(grupos)}  semanas: {len(con_datos)}/{len(semanas)}  pdf: {motor}')
     print(base + '.pdf')
 
