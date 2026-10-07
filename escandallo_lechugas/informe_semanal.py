@@ -11,7 +11,7 @@ quedan juntos en la semana en la que entró el producto.
 Uso:
     python3 informe_semanal.py <csv> <dir_salida>
 """
-import sys, os, re, html, datetime, collections, subprocess, shutil
+import sys, os, re, html, datetime, collections, subprocess, shutil, unicodedata
 
 EXCLUIR = {
     'LECHUGA ICEBERG',
@@ -51,6 +51,65 @@ NOMBRE = dict(ORDEN)
 
 def nombre(prod):
     return NOMBRE.get(prod, prod)
+
+
+# Orden maestro de problemas. Los que no estén aquí van al final, por orden alfabético.
+ORDEN_PROBLEMAS = [
+    # 1 podridos y hongos
+    'COST. PODRIDO', 'PODRIDO', 'COST. PODRIDO INTERNO', 'PUDRICION BLANDA', 'BOTRITIS', 'MOHO', 'BACTERIOSIS',
+    # 2 oxidaciones
+    'OXIDACIONES', 'TRONCO OX (CPT)',
+    # 3 tip burn y riveteado
+    'TIP BURN', 'RIVETEADO/PUNTEADO',
+    # 4 enfermedades de hoja
+    'STEMPHYLIUM', 'ALTERNARIA', 'MILDEW MARRON', 'MILDEW BLANCO', 'VIRUS', 'PUNTOS NEGROS',
+    # 5 conservación
+    'DESHIDRATADAS', 'DESHIDRATACION FUERTE', 'FILOS QUEMADOS', 'DECOLORACION', 'HOJA AMARILL',
+    'FILOS AMARILLOS', 'HOJA QUEMADA', 'BLANCA',
+    # 6 costillar
+    'COSTILLAR DANADO', 'COSTILLAR ROSA', 'COSTILLAR REVENTADO', 'COSTILLAR RAJADO', 'COSTILLARES',
+    # 7 plagas
+    'PULGON AISLADO', 'PULGON FAMILIAR', 'GUSANO', 'RASTRO GUSANO', 'MANCHAS TRIPS',
+    'DANO POR PLAGA <1/3', 'DANO POR PLAGA >1/3 SUPERF',
+    # 8 colirrábano y daños físicos
+    'PESTANAS BLANCAS', 'PESTANAS ROTAS', 'PESTANA PODRIDA', 'RAJADO', 'GOLPEADO', 'DANO MECANICO GRAVE',
+    'HOJA ROTA', 'TALLO ROTO', 'TRONCO ROTO', 'TRONCO MAL CORTADO', 'MAGULLADA',
+    # 9 resto
+    'TIERRA', 'SUCIA', 'DEFORMADAS', 'ESPIGON >5 CM', 'ESPIGON <5 CM', 'DEFECTO DE CALIBRE',
+    'MANCHA TRATAMIENTO', 'HOJA MANCHADA', 'SAVIA', 'OJO POLLO', 'DANO POR VIENTO', 'DANOS POR FRIO', 'HOJA VIEJA',
+]
+POS_PROB = {k: i for i, k in enumerate(ORDEN_PROBLEMAS)}
+
+# Variantes del ERP que son el mismo problema
+ALIAS_PROBLEMAS = {
+    'RIVET/PUNTEADO': 'RIVETEADO/PUNTEADO',
+}
+
+# Nombre a mostrar (con tildes) para las claves normalizadas
+NOMBRE_PROB = {
+    'PUDRICION BLANDA': 'PUDRICIÓN BLANDA', 'MILDEW MARRON': 'MILDEW MARRÓN',
+    'DESHIDRATACION FUERTE': 'DESHIDRATACIÓN FUERTE', 'DECOLORACION': 'DECOLORACIÓN',
+    'COSTILLAR DANADO': 'COSTILLAR DAÑADO', 'PULGON AISLADO': 'PULGÓN AISLADO', 'PULGON FAMILIAR': 'PULGÓN FAMILIAR',
+    'DANO POR PLAGA <1/3': 'DAÑO POR PLAGA <1/3', 'DANO POR PLAGA >1/3 SUPERF': 'DAÑO POR PLAGA >1/3',
+    'PESTANAS BLANCAS': 'PESTAÑAS BLANCAS', 'PESTANAS ROTAS': 'PESTAÑAS ROTAS', 'PESTANA PODRIDA': 'PESTAÑA PODRIDA',
+    'DANO MECANICO GRAVE': 'DAÑO MECÁNICO GRAVE', 'ESPIGON >5 CM': 'ESPIGÓN >5 CM', 'ESPIGON <5 CM': 'ESPIGÓN <5 CM',
+    'DANO POR VIENTO': 'DAÑO POR VIENTO', 'DANOS POR FRIO': 'DAÑOS POR FRÍO', 'TRONCO OX (CPT)': 'TRONCO OX',
+}
+
+
+def clave_problema(desc):
+    """Normaliza el nombre de un problema: sin tildes, sin el «·» final, alias unificados."""
+    k = ''.join(c for c in unicodedata.normalize('NFD', desc) if unicodedata.category(c) != 'Mn')
+    k = k.upper().replace('·', '').strip()
+    return ALIAS_PROBLEMAS.get(k, k)
+
+
+def nombre_problema(k):
+    return NOMBRE_PROB.get(k, k)
+
+
+def pos_problema(k):
+    return (0, POS_PROB[k]) if k in POS_PROB else (1, k)
 
 
 # ---------------------------------------------------------------- lectura
@@ -239,13 +298,12 @@ def celda_dia(revs):
     return '<td class="dia">' + '<hr class="sep">'.join(partes) + '</td>'
 
 
-def celda_unificada(revs):
-    """Celda de un día para varias fichas unificadas: % ponderado por nº de piezas.
-    Un problema que no aparece en una ficha cuenta como 0% en esa ficha."""
+def datos_celda(revs):
+    """Datos de un día para las fichas unificadas: piezas iniciales, piezas afectadas por problema y notas."""
     if not revs:
-        return '<td class="dia vacio">—</td>'
+        return None
     tot = 0          # piezas iniciales de las entradas presentes en la celda
-    acc = collections.OrderedDict()   # piezas afectadas por problema
+    acc = {}         # piezas afectadas por problema (clave normalizada)
     dias_raros = set()
     fixes = []
     for n, r in sorted(revs, key=lambda x: x[0]):
@@ -262,24 +320,44 @@ def celda_unificada(revs):
                     val = float(v.replace(',', '.'))
                 except ValueError:
                     continue
-                acc[(sec, d)] = acc.get((sec, d), 0.0) + val * pz_ficha / 100.0
-    partes = []
+                k = clave_problema(d)
+                acc[k] = acc.get(k, 0.0) + val * pz_ficha / 100.0
+    pct = {k: v * 100.0 / tot for k, v in acc.items() if v > 0}
     info = [f'{len(revs)} fichas · {tot} pzas' if len(revs) > 1 else f'{tot} pzas']
     if dias_raros:
         info.append('día ' + '/'.join(str(x) for x in sorted(dias_raros)))
     if fixes:
         info.append('pzas corregidas ' + ', '.join(fixes))
-    partes.append('<div class="nota">' + ' · '.join(info) + '</div>')
-    if not acc:
-        partes.append('<div class="ok">sin incidencias</div>')
-    else:
-        for sec, cls, lbl in (('MAY', 'may', 'MAYORES'), ('MEN', 'men', 'menores')):
-            items = [(d, acc[(sc, d)] * 100.0 / tot) for (sc, d) in acc if sc == sec]
-            if items:
-                items.sort(key=lambda x: -x[1])
-                partes.append(f'<div class="{cls}"><span class="lbl">{lbl}</span>' +
-                              ''.join(f'<span class="p">{esc(d)} <b>{fmt_num(x)}%</b></span>' for d, x in items) + '</div>')
-    return '<td class="dia">' + ''.join(partes) + '</td>'
+    if not pct:
+        info.append('<span class="ok">sin incidencias</span>')
+    return dict(pct=pct, info=' · '.join(info))
+
+
+def celdas_alineadas(dias, gravedad):
+    """Las tres celdas (día 5, 7, 10) con los problemas en líneas alineadas.
+    Las líneas las abre el primer día en que aparece cada problema; dentro de cada
+    tanda se sigue el orden maestro. Un problema nuevo nunca se cuela entre líneas ya abiertas."""
+    datos = {c: datos_celda(dias[c]) for c in (5, 7, 10)}
+    lineas = []
+    for c in (5, 7, 10):
+        if datos[c]:
+            nuevos = [k for k in datos[c]['pct'] if k not in lineas]
+            lineas.extend(sorted(nuevos, key=pos_problema))
+    out = []
+    for c in (5, 7, 10):
+        d = datos[c]
+        if d is None:
+            out.append('<td class="dia vacio">—</td>')
+            continue
+        filas = [f'<div class="nota">{d["info"]}</div>']
+        for k in lineas:
+            cls = 'may' if gravedad.get(k) == 'MAY' else 'men'
+            if k in d['pct']:
+                filas.append(f'<div class="ln {cls}"><span class="nm">{esc(nombre_problema(k))}</span><b>{fmt_num(d["pct"][k])}%</b></div>')
+            else:
+                filas.append(f'<div class="ln off"><span class="nm">{esc(nombre_problema(k))}</span><b>—</b></div>')
+        out.append('<td class="dia">' + ''.join(filas) + '</td>')
+    return ''.join(out)
 
 
 def fmt_num(x):
@@ -364,6 +442,13 @@ td.id .meta { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-
 .may { color: #8c2f2a; }
 .men { color: #333; }
 .p { display: inline-block; margin-right: 7px; white-space: nowrap; }
+.ln { display: flex; justify-content: space-between; gap: 4px; white-space: nowrap; overflow: hidden; line-height: 1.3; }
+.ln .nm { overflow: hidden; text-overflow: ellipsis; }
+.ln b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.6pt; }
+.ln.may { color: #8c2f2a; } .ln.may .nm { font-weight: 700; }
+.ln.men { color: #333; }
+.ln.off { color: #b5b5b5; } .ln.off b { font-weight: 400; }
+td.dia .nota { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; margin-bottom: 1px; }
 .p b { font-family: 'IBM Plex Mono', 'DejaVu Sans Mono', monospace; font-weight: 600; font-size: 7.6pt; }
 .ok { color: #3c7a3e; }
 .nota { font-family: 'IBM Plex Mono', monospace; font-size: 6.5pt; color: #8a6d3b; background: #faf3dc;
@@ -381,6 +466,14 @@ def generar_html(grupos, src_name, titulo):
     for g in grupos:
         por_sem[semana_iso(g['fecha'])].append(g)
 
+    cnt_sec = collections.defaultdict(collections.Counter)
+    for g in grupos:
+        for col in (5, 7, 10):
+            for n, r in g['dias'][col]:
+                for sec in ('MAY', 'MEN'):
+                    for c, d, v in r['probs'][sec]:
+                        cnt_sec[clave_problema(d)][sec] += 1
+    gravedad = {k: ('MAY' if c['MAY'] > c['MEN'] else 'MEN') for k, c in cnt_sec.items()}
     productos = sorted({g['prod'] for g in grupos}, key=lambda p: POS[p])
     color = {p: PALETA[POS[p] % len(PALETA)] for p in productos}
 
@@ -447,11 +540,14 @@ aunque esas revisiones caigan en semanas posteriores.</p>
     for p in productos:
         out.append(f'<span><span class="dot" style="background:{color[p]}"></span>{esc(nombre(p))}</span>')
     out.append('</div>')
+    out.append('<div class="legend"><span style="width:100%;letter-spacing:.1em">Orden maestro de problemas:</span>')
+    out.append(' · '.join(f'<span>{i + 1}. {esc(nombre_problema(k))}</span>' for i, k in enumerate(ORDEN_PROBLEMAS) if k in gravedad))
+    out.append('</div>')
     out.append("""<div class="notas">
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
 <p><b>Filas unificadas:</b> dentro de cada semana, todas las entradas de la misma finca y el mismo producto van en una sola fila. Se indican variedades, fechas de recepción, nº de entradas, piezas totales y albaranes.</p>
 <p><b>Piezas y porcentajes:</b> el nº de piezas de cada entrada es el de su <b>primera revisión</b> (piezas iniciales) y se mantiene en día 7 y día 10. El % de cada problema es piezas afectadas ÷ piezas iniciales. Si una ficha trae un nº de piezas distinto, se pasan sus % a piezas afectadas y se recalculan sobre las iniciales. Si la primera ficha trae un nº disparatado (más de 50) se usa el de las otras revisiones y la celda lo indica («pzas corregidas»). Cuando hay varias fichas unificadas, el % es piezas afectadas totales ÷ piezas iniciales totales; la celda indica cuántas fichas y piezas se han unido. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
-<p><b>Problemas:</b> MAYORES y menores tal y como vienen en la ficha, con el % de piezas afectadas, ordenados de mayor a menor. «Sin incidencias» = ninguna ficha anota problemas.</p>
+<p><b>Problemas y líneas alineadas:</b> cada problema ocupa la misma línea en día 5, día 7 y día 10, para leer su progresión. Las líneas las abre el primer día en que aparece el problema (en el orden maestro de abajo); los que aparecen nuevos en día 7 o día 10 se añaden debajo de las líneas ya abiertas. «—» en gris = el problema no aparece ese día. En rojo los problemas que el ERP clasifica como mayores, en gris los menores. «Sin incidencias» = ninguna ficha de ese día anota problemas.</p>
 <p><b>Identificación:</b> código de variedad, finca, fecha de recepción, nº de entradas y albarán. El nº de piezas se indica en cada celda, porque puede variar entre revisiones.</p>
 <p><b>Calendario de portada:</b> campaña completa de septiembre a mayo; las semanas en verde tienen producto escandallado, las blancas no. La línea dorada marca el cambio de año.</p>
 <p><b>Orden de productos:</b> en cada semana los productos aparecen siempre en el orden maestro de la leyenda; solo se listan los que tienen entradas esa semana.</p>
@@ -476,9 +572,9 @@ aunque esas revisiones caigan en semanas posteriores.</p>
                 for n, r in revs:
                     n_fichas += 1
                     for c, d, v in r['probs']['MAY']:
-                        cnt_may[d] += 1
+                        cnt_may[nombre_problema(clave_problema(d))] += 1
                     for c, d, v in r['probs']['MEN']:
-                        cnt_men[d] += 1
+                        cnt_men[nombre_problema(clave_problema(d))] += 1
         top_may = ''.join(f'<li><span>{esc(k)}</span><b>{n}</b></li>' for k, n in cnt_may.most_common(4)) or '<li><span>ninguno</span></li>'
         top_men = ''.join(f'<li><span>{esc(k)}</span><b>{n}</b></li>' for k, n in cnt_men.most_common(4)) or '<li><span>ninguno</span></li>'
 
@@ -492,7 +588,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
  <div class="box"><div class="k">Problemas mayores · nº de fichas</div><ul>{top_may}</ul></div>
  <div class="box"><div class="k">Problemas menores · nº de fichas</div><ul>{top_men}</ul></div>
 </div>
-<table class="t"><colgroup><col style="width:28%"><col style="width:24%"><col style="width:24%"><col style="width:24%"></colgroup>
+<table class="t"><colgroup><col style="width:22%"><col style="width:26%"><col style="width:26%"><col style="width:26%"></colgroup>
 <thead><tr><th>Producto · variedad · finca</th><th class="dia">Día 5</th><th class="dia">Día 7</th><th class="dia">Día 10</th></tr></thead>""")
         # unificar: misma finca y mismo producto dentro de la semana
         filas = collections.OrderedDict()
@@ -529,7 +625,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
                 meta.append('alb ' + ', '.join(albs))
             out.append(f'<tr><td class="id"><span class="var">{esc(", ".join(vars_))}</span> <span class="fin">{esc(fin)}</span>'
                        f'<div class="meta">{" · ".join(meta)}</div></td>'
-                       + celda_unificada(f['dias'][5]) + celda_unificada(f['dias'][7]) + celda_unificada(f['dias'][10]) + '</tr>')
+                       + celdas_alineadas(f['dias'], gravedad) + '</tr>')
         if prod_actual is not None:
             out.append('</tbody>')
         out.append('</table></div>')
