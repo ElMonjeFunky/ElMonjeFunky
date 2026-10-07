@@ -298,20 +298,20 @@ def celda_dia(revs):
     return '<td class="dia">' + '<hr class="sep">'.join(partes) + '</td>'
 
 
+MAX_PZAS_VISIBLES = 25   # por encima de esto no se escribe el nº de piezas
+
+
 def datos_celda(revs):
-    """Datos de un día para las fichas unificadas: piezas iniciales, piezas afectadas por problema y notas."""
+    """Datos de un día para las fichas unificadas: piezas iniciales y piezas afectadas por problema."""
     if not revs:
         return None
     tot = 0          # piezas iniciales de las entradas presentes en la celda
     acc = {}         # piezas afectadas por problema (clave normalizada)
     dias_raros = set()
-    fixes = []
     for n, r in sorted(revs, key=lambda x: x[0]):
         pz_ficha = piezas(r)            # base sobre la que el ERP calculó el % de esta ficha
         pz0 = r.get('pz0', pz_ficha)    # piezas iniciales de la entrada
         tot += pz0
-        if r.get('pz_fix'):
-            fixes.append(f"{r['pz_fix']}→{pz0}")
         if n not in (5, 7, 10):
             dias_raros.add(n)
         for sec in ('MAY', 'MEN'):
@@ -322,22 +322,25 @@ def datos_celda(revs):
                     continue
                 k = clave_problema(d)
                 acc[k] = acc.get(k, 0.0) + val * pz_ficha / 100.0
-    pct = {k: v * 100.0 / tot for k, v in acc.items() if v > 0}
-    info = [f'{len(revs)} fichas · {tot} pzas' if len(revs) > 1 else f'{tot} pzas']
-    if dias_raros:
-        info.append('día ' + '/'.join(str(x) for x in sorted(dias_raros)))
-    if fixes:
-        info.append('pzas corregidas ' + ', '.join(fixes))
-    if not pct:
-        info.append('<span class="ok">sin incidencias</span>')
-    return dict(pct=pct, info=' · '.join(info))
+    return dict(tot=tot, acc=acc, n=len(revs), dias_raros=dias_raros)
 
 
 def celdas_alineadas(dias, gravedad):
     """Las tres celdas (día 5, 7, 10) con los problemas en líneas alineadas.
     Las líneas las abre el primer día en que aparece cada problema; dentro de cada
-    tanda se sigue el orden maestro. Un problema nuevo nunca se cuela entre líneas ya abiertas."""
+    tanda se sigue el orden maestro. Un problema nuevo nunca se cuela entre líneas ya abiertas.
+    Las piezas de un día nunca superan las del día anterior (alguna se puede perder, nunca aparecer)."""
     datos = {c: datos_celda(dias[c]) for c in (5, 7, 10)}
+    base_prev = None
+    for c in (5, 7, 10):
+        d = datos[c]
+        if not d:
+            continue
+        base = d['tot'] if base_prev is None else min(d['tot'], base_prev)
+        base = max(base, 1)
+        d['base'] = base
+        d['pct'] = {k: min(v * 100.0 / base, 100.0) for k, v in d['acc'].items() if v > 0}
+        base_prev = base
     lineas = []
     for c in (5, 7, 10):
         if datos[c]:
@@ -349,7 +352,16 @@ def celdas_alineadas(dias, gravedad):
         if d is None:
             out.append('<td class="dia vacio">—</td>')
             continue
-        filas = [f'<div class="nota">{d["info"]}</div>']
+        info = []
+        if d['n'] > 1:
+            info.append(f"{d['n']} fichas")
+        if d['base'] <= MAX_PZAS_VISIBLES:
+            info.append(f"{d['base']} pzas")
+        if d['dias_raros']:
+            info.append('día ' + '/'.join(str(x) for x in sorted(d['dias_raros'])))
+        if not d['pct']:
+            info.append('<span class="ok">sin incidencias</span>')
+        filas = ['<div class="nota">' + (' · '.join(info) or '&nbsp;') + '</div>']
         for k in lineas:
             cls = 'may' if gravedad.get(k) == 'MAY' else 'men'
             if k in d['pct']:
@@ -556,7 +568,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
     out.append("""<div class="notas">
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
 <p><b>Filas unificadas:</b> dentro de cada semana, todas las entradas de la misma finca y el mismo producto van en una sola fila. Se indican variedades, fechas de recepción, nº de entradas, piezas totales y albaranes.</p>
-<p><b>Piezas y porcentajes:</b> el nº de piezas de cada entrada es el de su <b>primera revisión</b> (piezas iniciales) y se mantiene en día 7 y día 10. El % de cada problema es piezas afectadas ÷ piezas iniciales. Si una ficha trae un nº de piezas distinto, se pasan sus % a piezas afectadas y se recalculan sobre las iniciales. Si la primera ficha trae un nº disparatado (más de 50) se usa el de las otras revisiones y la celda lo indica («pzas corregidas»). Cuando hay varias fichas unificadas, el % es piezas afectadas totales ÷ piezas iniciales totales; la celda indica cuántas fichas y piezas se han unido. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
+<p><b>Piezas y porcentajes:</b> el nº de piezas de cada entrada es el de su <b>primera revisión</b> (piezas iniciales) y se mantiene en día 7 y día 10. El % de cada problema es piezas afectadas ÷ piezas iniciales. Cuando hay varias fichas unificadas, el % es piezas afectadas totales ÷ piezas iniciales totales. Las piezas de un día nunca superan las del día anterior. El nº de piezas solo se escribe cuando es 25 o menos; por encima se indica solo el nº de fichas. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
 <p><b>Problemas y líneas alineadas:</b> cada problema ocupa la misma línea en día 5, día 7 y día 10, para leer su progresión. Las líneas las abre el primer día en que aparece el problema (en el orden maestro de abajo); los que aparecen nuevos en día 7 o día 10 se añaden debajo de las líneas ya abiertas. «—» en gris = el problema no aparece ese día. En rojo los problemas que el ERP clasifica como mayores, en gris los menores. «Sin incidencias» = ninguna ficha de ese día anota problemas.</p>
 <p><b>Identificación:</b> código de variedad, finca, fecha de recepción, nº de entradas y albarán. El nº de piezas se indica en cada celda, porque puede variar entre revisiones.</p>
 <p><b>Calendario de portada:</b> campaña completa de septiembre a mayo; las semanas en verde tienen producto escandallado, las blancas no. La línea dorada marca el cambio de año.</p>
