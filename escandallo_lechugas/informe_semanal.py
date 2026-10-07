@@ -96,6 +96,13 @@ def leer_csv(path):
 
 # ---------------------------------------------------------------- agrupación
 
+def piezas(r):
+    try:
+        return max(int(r['sumesc']), 1)
+    except ValueError:
+        return 1
+
+
 def columna_dia(d):
     """Asigna el nº de días de la revisión a la columna 5 / 7 / 10 más cercana."""
     try:
@@ -127,7 +134,24 @@ def agrupar(recs):
             g['otros'].append(r)
         else:
             g['dias'][col].append((n, r))
-    return list(grupos.values())
+    out = list(grupos.values())
+    for g in out:
+        fichas = sorted(((n, r) for col in (5, 7, 10) for n, r in g['dias'][col]), key=lambda x: x[0])
+        if not fichas:
+            continue
+        # piezas iniciales = las de la primera revisión de la entrada
+        pz0 = piezas(fichas[0][1])
+        fix = None
+        if pz0 > 50:
+            alts = [piezas(r) for n, r in fichas[1:] if piezas(r) <= 50]
+            if alts:
+                fix = pz0
+                pz0 = collections.Counter(alts).most_common(1)[0][0]
+        g['pz0'] = pz0
+        for n, r in fichas:
+            r['pz0'] = pz0
+            r['pz_fix'] = fix
+    return out
 
 
 def semana_iso(d):
@@ -215,24 +239,21 @@ def celda_dia(revs):
     return '<td class="dia">' + '<hr class="sep">'.join(partes) + '</td>'
 
 
-def piezas(r):
-    try:
-        return max(int(r['sumesc']), 1)
-    except ValueError:
-        return 1
-
-
 def celda_unificada(revs):
     """Celda de un día para varias fichas unificadas: % ponderado por nº de piezas.
     Un problema que no aparece en una ficha cuenta como 0% en esa ficha."""
     if not revs:
         return '<td class="dia vacio">—</td>'
-    tot = 0
-    acc = collections.OrderedDict()
+    tot = 0          # piezas iniciales de las entradas presentes en la celda
+    acc = collections.OrderedDict()   # piezas afectadas por problema
     dias_raros = set()
+    fixes = []
     for n, r in sorted(revs, key=lambda x: x[0]):
-        pz = piezas(r)
-        tot += pz
+        pz_ficha = piezas(r)            # base sobre la que el ERP calculó el % de esta ficha
+        pz0 = r.get('pz0', pz_ficha)    # piezas iniciales de la entrada
+        tot += pz0
+        if r.get('pz_fix'):
+            fixes.append(f"{r['pz_fix']}→{pz0}")
         if n not in (5, 7, 10):
             dias_raros.add(n)
         for sec in ('MAY', 'MEN'):
@@ -241,17 +262,19 @@ def celda_unificada(revs):
                     val = float(v.replace(',', '.'))
                 except ValueError:
                     continue
-                acc[(sec, d)] = acc.get((sec, d), 0.0) + val * pz
+                acc[(sec, d)] = acc.get((sec, d), 0.0) + val * pz_ficha / 100.0
     partes = []
     info = [f'{len(revs)} fichas · {tot} pzas' if len(revs) > 1 else f'{tot} pzas']
     if dias_raros:
         info.append('día ' + '/'.join(str(x) for x in sorted(dias_raros)))
+    if fixes:
+        info.append('pzas corregidas ' + ', '.join(fixes))
     partes.append('<div class="nota">' + ' · '.join(info) + '</div>')
     if not acc:
         partes.append('<div class="ok">sin incidencias</div>')
     else:
         for sec, cls, lbl in (('MAY', 'may', 'MAYORES'), ('MEN', 'men', 'menores')):
-            items = [(d, acc[(sc, d)] / tot) for (sc, d) in acc if sc == sec]
+            items = [(d, acc[(sc, d)] * 100.0 / tot) for (sc, d) in acc if sc == sec]
             if items:
                 items.sort(key=lambda x: -x[1])
                 partes.append(f'<div class="{cls}"><span class="lbl">{lbl}</span>' +
@@ -427,7 +450,7 @@ aunque esas revisiones caigan en semanas posteriores.</p>
     out.append("""<div class="notas">
 <p><b>Semana:</b> semana ISO (lunes–domingo) de la fecha de recepción en almacén del CSV (columna FECHA). La fecha de cada revisión no se usa para asignar semana.</p>
 <p><b>Filas unificadas:</b> dentro de cada semana, todas las entradas de la misma finca y el mismo producto van en una sola fila. Se indican variedades, fechas de recepción, nº de entradas, piezas totales y albaranes.</p>
-<p><b>Columnas día 5 / 7 / 10:</b> revisiones con ese nº de días en conservación. Cuando hay varias fichas unificadas, el % de cada problema es la <b>media ponderada por piezas</b> (una ficha donde no aparece el problema cuenta como 0%); la celda indica cuántas fichas y piezas se han unido. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
+<p><b>Piezas y porcentajes:</b> el nº de piezas de cada entrada es el de su <b>primera revisión</b> (piezas iniciales) y se mantiene en día 7 y día 10. El % de cada problema es piezas afectadas ÷ piezas iniciales. Si una ficha trae un nº de piezas distinto, se pasan sus % a piezas afectadas y se recalculan sobre las iniciales. Si la primera ficha trae un nº disparatado (más de 50) se usa el de las otras revisiones y la celda lo indica («pzas corregidas»). Cuando hay varias fichas unificadas, el % es piezas afectadas totales ÷ piezas iniciales totales; la celda indica cuántas fichas y piezas se han unido. Fichas con otro nº de días (11, 12, 13…) van a la columna más cercana con la etiqueta <span class="nota">día n</span>. «—» = sin ficha para ese día.</p>
 <p><b>Problemas:</b> MAYORES y menores tal y como vienen en la ficha, con el % de piezas afectadas, ordenados de mayor a menor. «Sin incidencias» = ninguna ficha anota problemas.</p>
 <p><b>Identificación:</b> código de variedad, finca, fecha de recepción, nº de entradas y albarán. El nº de piezas se indica en cada celda, porque puede variar entre revisiones.</p>
 <p><b>Calendario de portada:</b> campaña completa de septiembre a mayo; las semanas en verde tienen producto escandallado, las blancas no. La línea dorada marca el cambio de año.</p>
